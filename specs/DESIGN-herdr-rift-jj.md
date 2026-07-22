@@ -14,7 +14,9 @@ The worker creates a fresh Jujutsu task change from the assigned base because an
 
 The current worker runtime invokes only fixed-argv `rift init` and `rift create <source> --into <destination> --name <attempt> --copy-all --no-hooks`; it never calls a Rift source-removal operation. It starts named child Pi processes through Herdr, verifies the returned pane identity and `idle` readiness before sending a prompt, and treats a later `blocked` status as retained attention rather than success.
 
-The current transport implementation creates a bare `transport.git` under coordinator state, disables its hooks, and uses a coordinator-owned named Jujutsu remote only. It observes the exact attempt ref before push, relies on Jujutsu's fetched-remote lease check, refuses a pre-existing attempt ref, verifies the bare target immediately after push, then fetches and rechecks exact commit/change/base identity in the coordinator repository. Neither child role receives this transport capability.
+The current transport implementation creates a bare `transport.git` under coordinator state, disables its hooks, and uses a coordinator-owned named Jujutsu remote only. It observes the exact attempt ref before push, relies on Jujutsu's fetched-remote lease check, refuses a pre-existing ref for initial publication, and permits the one reviewer amendment only when the ref still equals its prior reviewed commit. It verifies the bare target immediately after push, then fetches and rechecks exact commit/change/base identity in the coordinator repository. Neither child role receives this transport capability.
+
+The current integration implementation does not copy worker files or use Git merge/rebase. After revalidating the fetched/ref/review/base bindings and clean source working copy, it creates an empty coordinator working copy directly on the approved Jujutsu commit. It records operation identities around that mutation and treats Jujutsu conflict state, not conflict-marker text or command exit, as the integration authority.
 
 ## Tradeoffs
 

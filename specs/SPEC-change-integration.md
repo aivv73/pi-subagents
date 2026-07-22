@@ -24,9 +24,11 @@ Reviewer tracked mutation fails the review invocation.
 
 ## Integration
 
-Eligible independent tasks integrate in topological, creation, then task-ID order. Before each integration the coordinator evaluates the approved changes against the current integration base. A changed effective diff or conflict invalidates the old base binding.
+The current single-task integration requires an exact `approved` reviewer decision, fetched transport commit/change identity, approved revision facts, a clean source `@`, and source `@-` equal to the assigned base immediately before mutation. Any drift, stale approval/ref, scope/shape failure, or structural conflict returns a retained failure and does not mutate source.
 
-The coordinator records Jujutsu operation/commit IDs and structurally checks unresolved conflicts. File text or command success alone cannot prove integration.
+On success the coordinator journals the pre-mutation operation ID, runs only `jj new <approved-commit>` in source, then records the resulting operation ID. It requires the new source `@` to be a conflict-free empty change directly parented by the approved commit. File text and command success alone cannot prove integration, and worker files are never copied into source.
+
+Topological ordering, changed effective-diff re-evaluation, rebase, and conflict resolution are not implemented for the one-task slice.
 
 Conflicts return to the original worker in an assigned conflict-resolution workspace/context and require republishing and fresh review. Conflict cycles have a separate configurable budget, default one; exhaustion requires user attention while independent branches continue.
 

@@ -31,8 +31,8 @@ const successfulRevisionRun = (): readonly JournalEvent[] => {
     event({ _tag: "review_revision_requested", commitId: "commit-1", findings: "add a test" }),
     event({ _tag: "worker_revised", commitId: "commit-2" }),
     event({ _tag: "review_approved", commitId: "commit-2" }),
-    event({ _tag: "integration_started", commitId: "commit-2" }),
-    event({ _tag: "integration_succeeded", commitId: "commit-2" }),
+    event({ _tag: "integration_started", commitId: "commit-2", operationId: "op-before" }),
+    event({ _tag: "integration_succeeded", commitId: "commit-2", operationId: "op-after" }),
     event({ _tag: "cleanup_succeeded" }),
   ];
 };
