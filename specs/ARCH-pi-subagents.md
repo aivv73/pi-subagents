@@ -22,7 +22,7 @@ Resources have exactly one journaled owner. Retention transfers cleanup responsi
 
 ## Control and data flow
 
-The current domain flow is one task: creation, worker result, reviewer approval or one revision request, integration, and cleanup. It derives cancellation, blocked-agent, protocol-failure, and cleanup-warning outcomes from validated journal events. Before that flow can start, the Pi adapter checks TUI/trust/task/model gates and reads fixed runtime, filesystem, colocated Jujutsu/Git, state-path, artifact-ignore, and installed Herdr-schema facts. No decomposer, DAG, scheduler, Rift, Herdr, Jujutsu, Git transport, or artifact adapter exists yet.
+The current domain flow is one task: creation, worker result, reviewer approval or one revision request, integration, and cleanup. It derives cancellation, blocked-agent, protocol-failure, and cleanup-warning outcomes from validated journal events. Before that flow can start, the Pi adapter checks TUI/trust/task/model gates and reads fixed runtime, filesystem, colocated Jujutsu/Git, state-path, artifact-ignore, and installed Herdr-schema facts. The package has a coordinator-owned guarded child extension and contained artifact adapter, but no child process is launched yet. No decomposer, DAG, scheduler, Rift, Herdr, Jujutsu workspace, or Git transport adapter exists yet.
 
 ## Persistence and recovery
 

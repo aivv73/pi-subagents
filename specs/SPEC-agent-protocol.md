@@ -1,14 +1,12 @@
 # SPEC-agent-protocol: Agent roles, configuration, and artifacts
 
-The coordinator owns decomposer, worker, reviewer, result-repair, and conflict-resolver role contracts.
+The current coordinator owns built-in worker and reviewer contracts. Decomposer, result-repair, and conflict-resolver roles are not implemented.
 
 ## Configuration and prompts
 
-Global configuration is `~/.pi/agent/subagents.json`. Trusted project configuration is `.pi/subagents.json`; role specialization is contained Markdown under `.pi/subagents/prompts/`. Files are non-executable and decoded with versioned Effect Schema.
+Worker and reviewer instructions are built-in package assets. The child launch policy disables built-in tools, discovered extensions, skills, prompt templates, context files, themes, sessions, and project approval; it explicitly loads only the coordinator-owned child extension. Global/project role configuration, specialization, role model patterns, and overrides are not implemented.
 
-Prompts compose coordinator invariants, built-in role instructions, trusted project specialization, and a concise task-envelope reference in descending authority. Project/repository/task text remains untrusted data and cannot override isolation, identity, artifact, or permission rules.
-
-Role model patterns resolve through Pi. An absent pattern falls back to the parent model; an explicitly unavailable pattern fails launch. Tool requests may narrow defaults; expansions require [SPEC-trust-permissions](SPEC-trust-permissions.md).
+Project/repository/task text remains untrusted data and cannot override isolation, identity, artifact, or permission rules.
 
 ## Artifact area
 
@@ -21,23 +19,17 @@ Before launch the coordinator creates and verifies an ignored contained area:
   evidence/
 ```
 
-Input envelopes are coordinator-written, read-only, checksummed, and journal-bound. Outputs are size-limited, contained, non-symlink, and atomically renamed. The coordinator validates schema, identity, checksum, ownership, and repository facts.
+The coordinator creates the artifact directories only after proving `/.pi-subagents/` is ignored in the local Git exclude policy. Input envelopes are version-one coordinator-written JSON plus a SHA-256 sidecar, mode `0400`, and validated before output use. Worker and reviewer result outputs are version-one, size-limited, strict-schema JSON, identity-bound to the envelope, written through a same-directory atomic rename, and rejected when regular-file, containment, symlink, or checksum checks fail. A Jujutsu commit-ID invariant proves artifact writes do not change the current task change.
 
-Common envelope data includes contract/run/task/attempt/role IDs, model/tool facts, owned paths, Herdr/Rift identities, assigned/integration bases, allowed/forbidden revisions/paths, acceptance criteria, checks, budgets, deadlines, output path, and prompt hashes.
+Current envelopes carry run/task/attempt/role IDs, task text, canonical root, declared tracked write paths, assigned base commit, and the fixed version-one output path. Herdr/Rift identities, model facts, checks, deadlines, and prompt hashes are added with their owning runtime slices.
 
 ## Outputs
 
-- Decomposer: candidate graph and risk/cost hints.
-- Worker: ordered revision stack, changed paths, checks, evidence, diagnostics, and proposed tasks.
-- Reviewer: exact commit/base binding, checks, findings, and approval or revision request.
-- Repair: repaired artifact plus proof task revisions did not change.
-- Conflict resolver: old/new base, preserved task IDs, resolved revisions/paths, remaining conflicts, and checks.
+- Worker: exact run/task/attempt identity, one change/commit identity, and changed paths.
+- Reviewer: exact run/task/attempt and commit/base identity, approval or revision request, and findings.
 
 After writing output, the agent may print `PI_SUBAGENT_RESULT <relative-path>`. This marker and Herdr settlement are diagnostic only.
 
-Missing/invalid output receives one repair-only prompt. A second failure fails the attempt.
-
-Each role envelope/output pair versions independently. The coordinator writes current versions and supports pure migrations from the previous two released versions for recovery. Unsupported versions pause recovery.
+Missing or invalid output fails this slice directly; result repair is unsupported. Worker/reviewer envelope/output contracts are version one. Migration and recovery decoding are unsupported.
 
 Revision authority follows [SPEC-change-integration](SPEC-change-integration.md).
-

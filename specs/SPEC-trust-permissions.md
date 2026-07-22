@@ -4,25 +4,21 @@ Orchestration is unavailable until Pi reports the project trusted. The extension
 
 ## Child runtime
 
-Child Pi runs with built-in tools and project resource discovery disabled. A coordinator-owned extension supplies guarded role-specific tools. It canonicalizes paths, mediates argv process policies, constructs environment, protects metadata/artifacts, and reports denials structurally.
+Child Pi launch arguments disable built-in tools and all discovered project/global extensions, skills, prompt templates, context files, themes, and project approval. The only explicit child extension supplies guarded role-specific tools. It canonicalizes paths, rejects symlink paths, constructs a minimal environment, protects metadata/artifacts, and reports denials structurally.
 
 This is not a hostile-code OS sandbox. Approval of an executable may authorize behavior beyond wrapper visibility; the UI must disclose that limitation.
 
 ## Files and roles
 
-Reads are contained in the canonical Rift root. Writes require task-declared tracked paths or the owned artifact area. `.jj`, `.git`, `.rift`, input envelopes, journals, transports, credentials, other attempts, and paths outside the root are protected.
+Reads/searches are contained in the canonical child root. `.jj`, `.git`, `.rift`, `.pi-subagents`, credential/secret paths, environment files, symlinks, and paths outside the root are protected. Worker writes are exact declared tracked paths only; both roles may write only their fixed result artifact through the coordinator protocol.
 
-Decomposers are read-only. Workers receive scoped mutation and command capabilities. Reviewers may read and run bounded checks but may not mutate tracked state. Repair may write only its output artifact. Conflict resolution writes only assigned conflict/task paths.
-
-Project configuration may narrow capabilities; expansions require policy approval.
+Workers receive contained read/search/edit/write plus narrow Jujutsu identity/describe tools. Reviewers receive contained read/search and a fixed read-only Jujutsu diff. Reviewers cannot mutate tracked state. No other role or project configuration is supported yet.
 
 ## Environment, commands, and network
 
-Agents receive a minimal constructed environment. General secrets, `.env`, SSH/GPG agents, cloud/registry/database credentials, proxies, and upstream Git authentication are excluded. Pi may internally resolve model authentication, which tools cannot inspect.
+Agents receive a constructed allowlist environment containing only runtime locale/terminal paths, home/config locations for Pi's internal model resolution, and coordinator guard configuration. General secrets, `.env`, SSH/GPG agents, cloud/registry/database credentials, proxies, and upstream Git authentication are excluded. Tools expose no environment inspection capability.
 
-Commands use argv arrays and executable/argument/cwd/environment policies. Unmatched non-prohibited commands require an exact task-attempt fingerprint approval. Approvals do not persist outside that attempt. Generic shells/interpreters, privilege escalation, destructive commands, lifecycle installers, remote execution, and upstream publication are denied by default.
-
-Network access is denied by default and any exception is exact and attempt-scoped. The first version does not claim kernel-level egress enforcement.
+There is no general process, shell, interpreter, network, approval, or project-command tool. The only child process use is fixed-argv Jujutsu identity/describe for a worker and fixed-argv diff for a reviewer. Pi may internally resolve model authentication, which tools cannot inspect. The first version does not claim kernel-level egress enforcement.
 
 Rift/repository setup hooks never execute in the first version. Reviewer tests that mutate tracked files fail review.
 
