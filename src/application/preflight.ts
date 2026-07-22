@@ -56,7 +56,7 @@ export interface PreflightRequest {
   readonly cwd: string;
 }
 
-const requiredHerdrCapabilities = ["agent.start", "agent.get", "agent.send", "session.snapshot"] as const;
+const requiredHerdrCapabilities = ["agent.start", "agent.get", "agent.send", "pane.send_keys", "pane.close", "session.snapshot"] as const;
 
 const commandDisplay = (executable: string, arguments_: readonly string[]): string =>
   [executable, ...arguments_].join(" ");

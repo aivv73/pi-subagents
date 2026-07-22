@@ -11,7 +11,7 @@ const installedHerdrSchema = JSON.stringify({
   schema_version: 1,
   schemas: {
     request: {
-      anyOf: [{ const: "agent.start" }, { const: "agent.get" }, { const: "agent.send" }, { const: "session.snapshot" }],
+      anyOf: [{ const: "agent.start" }, { const: "agent.get" }, { const: "agent.send" }, { const: "pane.send_keys" }, { const: "pane.close" }, { const: "session.snapshot" }],
     },
     event: {},
   },
@@ -126,7 +126,7 @@ describe("runPreflight", () => {
     const result = await runPreflight(request(), environment);
     expect(result).toMatchObject({
       _tag: "preflight_failed",
-      issues: [expect.objectContaining({ code: "missing_herdr_capability", message: expect.stringContaining("agent.send") })],
+      issues: expect.arrayContaining([expect.objectContaining({ code: "missing_herdr_capability", message: expect.stringContaining("agent.send") })]),
     });
   });
 

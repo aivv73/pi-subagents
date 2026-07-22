@@ -18,7 +18,7 @@ Notifications are configurable and default to attention, cleanup/recovery failur
 
 ## Recovery and retention
 
-Startup replays/migrates journals, reconciles external state, and presents one recovery overlay for all unfinished runs. It shows drift and safe actions: inspect, resume, keep paused, or cancel/clean. Resume requires explicit confirmation and resolved invariants.
+The current startup scanner reports unfinished journals as paused with manual-cleanup guidance; it does not migrate, reconcile, resume, or delete them. Cancellation retains uncertain resources. Verified post-integration cleanup records complete success separately from a cleanup warning, which never rolls back integration.
 
 Retained resources show task/attempt, reason, age/size, path/Herdr identity, and cleanup eligibility. Cleaning selected/eligible resources requires exact confirmation and records partial outcomes.
 
@@ -31,4 +31,3 @@ Chat/tool rendering remains concise. Durable custom entries are limited to run c
 All rendering is width-safe, theme-aware, keyboard/IME accessible, redacted, and sanitizes untrusted labels/output.
 
 Persistence architecture follows [DESIGN-effect-event-sourcing](DESIGN-effect-event-sourcing.md).
-

@@ -34,6 +34,6 @@ Conflicts return to the original worker in an assigned conflict-resolution works
 
 ## Cleanup
 
-Temporary refs are deleted with lease checks after terminal disposition. Successful workspaces remain until run end by default. Failed, forced, invalid, or escalated resources are retained under bounded diagnostic policy. Cleanup is idempotent, verifies Rift identity, never unregisters the source root, and reconciles stale refs/panes/workspaces after interruption.
+After verified integration, the current cleanup path lease-deletes the exact temporary ref, closes known Herdr panes, removes known non-source Rift roots, and invokes Rift GC. It treats an already absent ref/Rift as cleaned, refuses a source-root match, and continues through independent cleanup steps. Complete cleanup reports `succeeded`; any post-integration cleanup failure reports `succeeded_with_cleanup_warning` and never rolls back integration. Failed, forced, invalid, blocked, cancelled, or pre-integration resources are retained for diagnostics. Reconciliation of stale resources and old-run cleanup are not implemented.
 
 This protocol depends on [DESIGN-herdr-rift-jj](DESIGN-herdr-rift-jj.md) and [SPEC-agent-protocol](SPEC-agent-protocol.md).

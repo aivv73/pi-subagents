@@ -27,6 +27,6 @@ The state model permits exactly one reviewer-requested revision. The implemented
 
 ## Cancellation
 
-Cancellation moves the task through `cancelling` to `cancelled`; command delivery and resource disposal are not implemented yet. Integrated work remains integrated and unapproved work never becomes integrated. The current journal scanner reports unfinished runs as paused and does not resume or delete them.
+Cancellation moves the task through `cancelling` to `cancelled`. The coordinator asks each known agent to stop, waits a bounded interval, then sends one pane `Ctrl+C` when needed; all cancellation resources remain retained even when settlement is uncertain. Cancellation never triggers integration or cleanup. Integrated work remains integrated and unapproved work never becomes integrated. The current journal scanner reports unfinished runs as paused and does not resume or delete them.
 
 Architecture and persistence follow [ARCH-pi-subagents](ARCH-pi-subagents.md).
