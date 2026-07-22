@@ -1,43 +1,32 @@
 # SPEC-task-graph: Task graph and run semantics
 
-The coordinator owns one validated directed acyclic task graph per run.
+The current coordinator foundation owns one direct task per run. It has no graph, decomposition, dynamic task creation, queue, concurrency, or execution retry.
 
 ## Decomposition
 
-A candidate graph contains stable task IDs, purpose, role, inputs, acceptance criteria, expected structured output, dependencies, and creation order. Before resource creation the coordinator rejects invalid schema, duplicate/missing IDs, cycles, out-of-scope work, duplicated outputs, or exceeded limits. The decomposer receives one repair attempt; a second invalid graph fails the run.
-
-Workers may propose tasks only through their result artifact. The coordinator inserts a proposal automatically when it is valid, in scope, acyclic, non-duplicative, explicit about dependencies/output, and within configured limits. Material scope/risk/limit expansion requires user attention.
+The direct task originates from the user command. It has no dependencies and does not invoke a decomposer. Worker-proposed tasks, task repair, and task graph validation are unsupported.
 
 ## States
 
-Tasks move through `pending`, `ready`, `running`, `awaiting_review`, `revision_requested`, `approved`, and `integrated`, with `blocked`, `retry_wait`, `failed`, `cancelling`, and `cancelled` alternatives.
-
-A task is ready only when all direct dependencies are integrated. Herdr lifecycle values are observations and cannot advance semantic state without validated artifacts/repository facts.
+The direct task moves through `pending`, `running`, `awaiting_review`, `revision_requested`, `approved`, and `integrated`, with `blocked`, `failed`, `cancelling`, and `cancelled` alternatives. Only typed journal facts advance the semantic state; process lifecycle labels do not.
 
 Runs terminate as:
 
-- `succeeded`: every task integrated;
-- `partially_failed`: a task failed or was causally blocked after independent work settled;
-- `cancelled`: cancellation settled with no active semantic work;
-- `failed`: decomposition or a coordinator invariant failed before meaningful partial completion.
+- `succeeded`: the direct task integrated and cleanup completed;
+- `succeeded_with_cleanup_warning`: the direct task integrated but cleanup reported a warning;
+- `cancelled`: cancellation settled with no integration;
+- `failed`: a coordinator invariant or protocol failed before integration.
 
 ## Scheduling
 
-Ready tasks are ordered by the number of non-terminal transitive dependents they unlock, then creation order, then task ID. A priority queue holds candidates, which are revalidated before dispatch. Finite global, worker, and reviewer limits apply, with reviewer capacity reserved against worker starvation.
+`SingleRunRegistry` permits one active direct run. There is no ready queue, priority ordering, role capacity, or concurrent task scheduling.
 
 ## Failure and retries
 
-Execution retries are configurable and default to one fresh attempt/workspace from the same base. Result-artifact repair and reviewer-requested revision are separate budgets.
-
-After retries are exhausted, the task fails, all transitive non-terminal dependents become causally blocked, and independent branches continue.
-
-When Herdr reports `blocked`, only that task pauses and enters user attention; no permission is automatically approved.
+The state model permits exactly one reviewer-requested revision. Execution retry and result-artifact repair are unsupported. A blocked worker or reviewer produces a `blocked` semantic state; it is never approved automatically.
 
 ## Cancellation
 
-Cancellation stops dispatch, requests cooperative settlement, then sends `Ctrl+C` after a grace period and closes the pane after a forced timeout. Forced-stop workspaces are retained for diagnostics. Pending work becomes cancelled; integrated work remains integrated; unapproved work is never integrated.
-
-The terminal summary includes task states, causal failures, integrated revisions, retained resources, rejected proposals, and cleanup status.
+Cancellation moves the task through `cancelling` to `cancelled`; command delivery and resource disposal are not implemented yet. Integrated work remains integrated and unapproved work never becomes integrated. The current journal scanner reports unfinished runs as paused and does not resume or delete them.
 
 Architecture and persistence follow [ARCH-pi-subagents](ARCH-pi-subagents.md).
-

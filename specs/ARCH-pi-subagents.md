@@ -1,13 +1,13 @@
 # ARCH-pi-subagents: Pi subagent orchestration architecture
 
-`@aivv/pi-subagents` is a TypeScript Pi extension whose Effect runtime coordinates automatic task decomposition, Herdr-hosted Pi subprocesses, Rift-isolated repositories, reviewer-controlled change integration, recovery, and cleanup. Its currently shipped package registers the TUI-only `/subagents run <task>` command surface; until preflight and orchestration are present, a syntactically valid command reports that orchestration is unavailable and creates no resources.
+`@aivv/pi-subagents` is a TypeScript Pi extension for reviewer-controlled, isolated subagent orchestration. Its current package registers the TUI-only `/subagents run <task>` command surface and provides the event-sourced foundation for one direct worker/reviewer run; preflight and external orchestration are not connected to that command yet, so a syntactically valid command creates no resources.
 
 ## Boundaries
 
-The system has five inward-pointing layers:
+The system has five inward-pointing layers. The current foundation implements the domain core, JSONL journal adapter, and single-run registry; future adapters and coordination remain outside the current executable surface.
 
 1. **Pi adapter** registers commands/tools and renders semantic state. It does not own orchestration decisions.
-2. **Application services** supervise runs, dispatch ready work, reconcile resources, and apply policies.
+2. **Application services** claim one active direct run and will supervise it, dispatch ready work, reconcile resources, and apply policies as those behaviors are added.
 3. **Domain core** decides commands, emits events, and reduces events into run/task/attempt state without importing Pi, Herdr, Rift, process, filesystem, or TUI APIs.
 4. **Ports** describe journals, artifacts, Herdr, Rift, Jujutsu, Git transport, clocks, IDs, and process execution.
 5. **Adapters** implement ports with JSONL/filesystem storage, Herdr CLI/socket APIs, and command-backed Rift, `jj`, and Git clients.
@@ -16,23 +16,19 @@ The package also contains a coordinator-owned child Pi extension. Child Pi start
 
 ## Runtime ownership
 
-A shared run registry owns one scoped `RunSupervisor` fiber per active run. A run scope owns its priority dispatcher, capacity leases, journal handle, reconciliation state, and retained-resource registry. Attempt and review scopes own their Herdr pane, Rift workspace, artifact area, temporary transport ref, timers, and subscriptions.
+`SingleRunRegistry` admits one active run and rejects a second with the active run ID. The direct-run state reducer owns the semantic worker/reviewer lifecycle and mutation intent/outcome facts. No dispatcher, capacity lease, RunSupervisor fiber, external resource scope, or retained-resource registry exists yet.
 
 Resources have exactly one journaled owner. Retention transfers cleanup responsibility from an attempt scope to the run retention registry; it never silently suppresses cleanup.
 
 ## Control and data flow
 
-The parent Pi command accepts a goal. A decomposer produces a candidate DAG, which the coordinator validates before any workspace creation. Ready tasks are scheduled under global and role-specific capacity limits.
-
-For each worker attempt, the coordinator creates an exact Rift snapshot, creates a fresh Jujutsu task change, writes a versioned input envelope, and starts Pi in a Herdr pane. The worker writes a versioned ignored output artifact. The coordinator validates it against repository state and publishes the exact revision to a coordinator-owned local bare Git transport.
-
-A reviewer runs in a separate Rift snapshot and returns an exact commit-bound decision. Only approved commits may enter deterministic coordinator integration. Rejections and conflicts return to the original worker under bounded revision policies.
+The current domain flow is one task: creation, worker result, reviewer approval or one revision request, integration, and cleanup. It derives cancellation, blocked-agent, protocol-failure, and cleanup-warning outcomes from validated journal events. No decomposer, DAG, scheduler, Rift, Herdr, Jujutsu, Git transport, or artifact adapter exists yet.
 
 ## Persistence and recovery
 
-Each run has an append-only versioned JSONL event journal. Pure reducers derive state. Periodic versioned snapshots accelerate replay but never replace the event history.
+Each run has an append-only, fsynced version-one JSONL event journal under `~/.pi/agent/state/pi-subagents/<repository-id>/runs/`. Effect Schema defines direct-run commands, event records, and derived state; journal records decode strictly, while a pure reducer rejects mismatched IDs, non-contiguous sequences, duplicate event IDs, illegal state transitions, and unmatched external outcomes.
 
-External mutations use durable intent, idempotent execution, observed outcome, and reconciliation. Startup recovery replays journals, reconciles Herdr/Rift/Git/`jj`/artifact facts, and requires user confirmation before dispatch resumes.
+External mutations are represented by durable intent and observed-outcome events. Startup can report unfinished journals as paused with manual-cleanup guidance; it neither resumes, reconciles, snapshots, migrates, nor deletes them.
 
 ## Trust boundaries
 
