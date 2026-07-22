@@ -16,7 +16,7 @@ The worker creates a fresh Jujutsu task change from the assigned base because an
 
 Independent repositories lose shared Jujutsu operation history and require explicit publication, fetch, lease, and cleanup. Approved parallel revisions may conflict when integrated against a newer base, so changed effective diffs require conflict resolution and fresh review.
 
-Herdr process hosting is less directly typed than in-process Pi SDK sessions and requires capability negotiation against the installed Herdr protocol. Structured artifacts and repository checks, not terminal scraping, compensate for this boundary.
+Herdr process hosting is less directly typed than in-process Pi SDK sessions and requires capability negotiation against the installed Herdr protocol. The read-only preflight decodes the local schema header and requires the exact operations needed by the supported flow; it does not infer support from repository `next` documentation or a version range. Structured artifacts and repository checks, not terminal scraping, compensate for this boundary.
 
 ## Rejected alternatives
 
@@ -26,4 +26,3 @@ Herdr process hosting is less directly typed than in-process Pi SDK sessions and
 - Terminal output and Herdr `done`/`idle` cannot prove semantic completion.
 
 This decision is realized by [SPEC-agent-protocol](SPEC-agent-protocol.md) and [SPEC-change-integration](SPEC-change-integration.md).
-

@@ -1,6 +1,6 @@
 # ARCH-pi-subagents: Pi subagent orchestration architecture
 
-`@aivv/pi-subagents` is a TypeScript Pi extension for reviewer-controlled, isolated subagent orchestration. Its current package registers the TUI-only `/subagents run <task>` command surface and provides the event-sourced foundation for one direct worker/reviewer run; preflight and external orchestration are not connected to that command yet, so a syntactically valid command creates no resources.
+`@aivv/pi-subagents` is a TypeScript Pi extension for reviewer-controlled, isolated subagent orchestration. Its current package registers the TUI-only `/subagents run <task>` command surface, provides the event-sourced foundation for one direct worker/reviewer run, and invokes read-only preflight. A passing preflight still creates no journal, Rift, transport, Herdr pane, or agent because the worker flow is not implemented yet.
 
 ## Boundaries
 
@@ -22,7 +22,7 @@ Resources have exactly one journaled owner. Retention transfers cleanup responsi
 
 ## Control and data flow
 
-The current domain flow is one task: creation, worker result, reviewer approval or one revision request, integration, and cleanup. It derives cancellation, blocked-agent, protocol-failure, and cleanup-warning outcomes from validated journal events. No decomposer, DAG, scheduler, Rift, Herdr, Jujutsu, Git transport, or artifact adapter exists yet.
+The current domain flow is one task: creation, worker result, reviewer approval or one revision request, integration, and cleanup. It derives cancellation, blocked-agent, protocol-failure, and cleanup-warning outcomes from validated journal events. Before that flow can start, the Pi adapter checks TUI/trust/task/model gates and reads fixed runtime, filesystem, colocated Jujutsu/Git, state-path, artifact-ignore, and installed Herdr-schema facts. No decomposer, DAG, scheduler, Rift, Herdr, Jujutsu, Git transport, or artifact adapter exists yet.
 
 ## Persistence and recovery
 

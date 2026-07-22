@@ -23,4 +23,6 @@ The shipped package is an ESM Pi package. It declares Pi packages as peer depend
 - Releases begin as SemVer prereleases under npm `next`. Promotion requires the support-matrix acceptance suite.
 - Release CI must reject tarballs containing external binaries/source payloads, credentials, journals, or test secrets and must verify source/license correspondence and npm provenance where available.
 
+The current preflight records exact observed Pi, Node, Herdr, Jujutsu, and Git version output and Herdr protocol/schema versions as capability evidence. Rift exposes no installed version command in the supported CLI, so preflight proves its required `create`, `--copy-all`, and `--no-hooks` capabilities from its local help. It accepts no guessed numeric range: required Herdr operations are discovered from the installed JSON schema.
+
 This requirement constrains [ARCH-pi-subagents](ARCH-pi-subagents.md) and all public compatibility behavior.

@@ -1,6 +1,6 @@
 # SPEC-trust-permissions: Trust and agent capabilities
 
-Orchestration is unavailable until Pi reports the project trusted. The extension does not read project orchestration configuration or create journals, workspaces, transports, panes, or agents before trust.
+Orchestration is unavailable until Pi reports the project trusted. The extension rejects an untrusted project before invoking any operating-system probe, reading project orchestration configuration, or creating journals, workspaces, transports, panes, or agents. After trust, its read-only preflight also requires TUI mode, non-empty task text, and configured authentication for the active parent model before inspecting repository or external-tool facts.
 
 ## Child runtime
 
@@ -31,4 +31,3 @@ Rift/repository setup hooks never execute in the first version. Reviewer tests t
 Ambiguous paths, stale approvals, policy/schema failures, unsupported enforcement, missing guard extension, or unexpected reviewer mutation fail closed. Journals record policy hashes, command fingerprints, sanitized environment keys, approvals/denials, and transport actions without secrets or unbounded output.
 
 UI requirements for approval are specified in [SPEC-observability-recovery](SPEC-observability-recovery.md).
-
