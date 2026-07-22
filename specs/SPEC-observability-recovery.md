@@ -4,7 +4,7 @@ Pi displays semantic orchestration state; Herdr displays live terminals. UI labe
 
 ## Active runs
 
-In TUI mode, a compact widget above the editor shows selected run state, grouped task counts, highest-priority attention, recovery/cleanup warning, and `/subagents` hint. A minimal footer status supplements it.
+In TUI mode, the current compact widget shows a semantic phase, exact integrated revision when known, retained resources when known, and bounded detail. Its phases distinguish worker execution, worker validation, review, integration, cleanup, blocked/failure, cancellation, success, and cleanup warning; Herdr idle/done is never semantic success. A passed preflight is explicitly labelled not dispatched while the command-to-coordinator binding remains absent.
 
 `/subagents` opens a responsive overlay for runs, tasks, attempts, reviews, integration, bounded journal details, and retained resources. Actions include inspect, pause dispatch, resume, cancel, eligible retry, recovery, and cleanup. Arbitrary graph/state editing is unsupported.
 
@@ -12,9 +12,7 @@ Selecting an agent shows semantic details and an explicit **Focus in Herdr** act
 
 ## Attention and notifications
 
-Blocked agents, approvals, exhausted retries, conflicts, invalid recovery, and destructive cleanup enter an ordered attention queue. Arrival notifies and marks UI without stealing focus. `/subagents attention` opens a decision dialog with trusted context, bounded sanitized diagnostics, and explicit authority. Escape leaves it pending.
-
-Notifications are configurable and default to attention, cleanup/recovery failures, and run terminal state. Adapter observations are deduplicated/rate-limited.
+The current adapter emits bounded notifications for preflight failure, blocked/failure, cancellation, terminal success, and cleanup warning. Attention queues, overlay actions, and notification configuration are not implemented.
 
 ## Recovery and retention
 

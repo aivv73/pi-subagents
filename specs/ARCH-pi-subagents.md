@@ -1,6 +1,6 @@
 # ARCH-pi-subagents: Pi subagent orchestration architecture
 
-`@aivv/pi-subagents` is a TypeScript Pi extension for reviewer-controlled, isolated subagent orchestration. Its current package registers the TUI-only `/subagents run <task>` command surface, provides the event-sourced foundation for one direct worker/reviewer run, invokes read-only preflight, and contains a one-worker attempt supervisor. The parent command does not invoke the supervisor yet, so a passing preflight still creates no journal, Rift, transport, Herdr pane, or agent.
+`@aivv/pi-subagents` is a TypeScript Pi extension for reviewer-controlled, isolated subagent orchestration. Its current package registers the TUI-only `/subagents run <task>` command surface, provides the event-sourced foundation and isolated worker/reviewer/publication/revision/integration/cleanup services for one direct run, and invokes read-only preflight. The parent command is not yet bound to that coordinator, so a passing preflight still creates no journal, Rift, transport, Herdr pane, or agent.
 
 ## Boundaries
 
@@ -35,6 +35,8 @@ The one-revision service accepts only that first exact revision request, returns
 The integration service validates the approved reviewer decision, current fetched transport ref, target revision, clean source `@`, and exact source `@-` base before mutating source. It journals the pre-integration Jujutsu operation ID, performs only `jj new <approved-commit>`, then requires a new operation and a conflict-free empty source `@` directly parented by that commit before recording success. Drift, stale approval, and structural conflict return a retained blocked result without source mutation.
 
 Cancellation journals intent, asks each known agent to stop, waits a bounded interval, sends one `Ctrl+C` through its verified pane when necessary, and always retains Rifts/panes/refs for inspection. Verified post-integration cleanup lease-deletes the exact temporary ref, closes panes, removes only non-source Rifts, and runs Rift GC. Each step is idempotent and independent: complete cleanup journals `cleanup_succeeded`; any post-integration cleanup warning journals `cleanup_failed` and leaves integration intact. No decomposer, DAG, multi-worker scheduler, execution retry, result repair, rebase/conflict resolver, upstream update, recovery/resume, or old-run cleanup exists yet.
+
+The Pi adapter renders a compact semantic widget for coordinator phases and terminal notifications. It never maps Herdr idle/done to validation, approval, or integration. Until dispatch is bound, the only displayed live command state is an honest preflight-passed/not-dispatched status. Package verification checks required distributable source/assets/licenses and rejects journals, repository metadata, credentials, environments, and binary archives from the tarball.
 
 ## Persistence and recovery
 

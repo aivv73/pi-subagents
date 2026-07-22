@@ -25,4 +25,6 @@ The shipped package is an ESM Pi package. It declares Pi packages as peer depend
 
 The current preflight records exact observed Pi, Node, Herdr, Jujutsu, and Git version output and Herdr protocol/schema versions as capability evidence. Rift exposes no installed version command in the supported CLI, so preflight proves its required `create`, `--copy-all`, and `--no-hooks` capabilities from its local help. It accepts no guessed numeric range: required Herdr operations (`agent.start`, `agent.get`, `agent.send`, `pane.send_keys`, `pane.close`, and `session.snapshot`) are discovered from the installed JSON schema.
 
+`npm run pack:verify` currently enforces the local tarball-content subset: compiled entry points, corresponding source, prompt assets, and license/notice/security artifacts must exist; repository metadata, journals, state/artifacts, environments, credentials, coverage, dependencies, and archives must not. Clean-install and provenance verification remain release-CI work.
+
 This requirement constrains [ARCH-pi-subagents](ARCH-pi-subagents.md) and all public compatibility behavior.

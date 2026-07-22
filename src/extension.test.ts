@@ -7,7 +7,7 @@ type Command = {
   readonly description: string;
   readonly handler: (argumentsText: string, context: {
     readonly mode: "tui" | "rpc" | "json" | "print";
-    readonly ui: { notify(message: string, type?: "info" | "warning" | "error"): void };
+    readonly ui: { notify(message: string, type?: "info" | "warning" | "error"): void; setWidget?(key: string, lines: readonly string[]): void };
   }) => Promise<void>;
 };
 

@@ -40,7 +40,8 @@
     "test": "vitest run",
     "check": "npm run build && npm run test",
     "prepack": "npm run build",
-    "pack:check": "npm pack --dry-run"
+    "pack:check": "npm pack --dry-run",
+    "pack:verify": "node scripts/verify-package.mjs"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",

@@ -3,6 +3,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { nodePreflightEnvironment } from "./adapters/node-preflight.js";
 import { runPreflight } from "./application/preflight.js";
 import { parseRunInvocation } from "./command.js";
+import { progressWidget } from "./application/progress.js";
 
 /** Pi package entry point. Orchestration begins in later first-slice tickets. */
 export default function piSubagentsExtension(pi: ExtensionAPI): void {
@@ -28,11 +29,14 @@ export default function piSubagentsExtension(pi: ExtensionAPI): void {
         nodePreflightEnvironment(),
       );
       if (preflight._tag === "preflight_failed") {
+        context.ui.setWidget?.("pi-subagents", progressWidget({ phase: "failed", detail: "Preflight failed before resources were created." }));
         context.ui.notify(`Preflight failed: ${preflight.issues.map((entry) => entry.message).join(" ")}`, "error");
         return;
       }
 
-      // Do not create state or external resources until the worker flow exists (#5).
+      // The public coordinator binding is intentionally deferred; do not misrepresent a passed
+      // preflight or a Herdr lifecycle label as worker validation, review, or integration.
+      context.ui.setWidget?.("pi-subagents", progressWidget({ phase: "preflight", detail: "Preflight passed; coordinator dispatch is not yet bound to this command." }));
       context.ui.notify(
         `Preflight passed for “${invocation.task}”, but worker orchestration is not implemented yet.`,
         "info",
