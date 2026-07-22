@@ -28,6 +28,8 @@ const withRole = async (role: "worker" | "reviewer", test: (tools: readonly stri
         assignedBaseCommitId: "base",
         outputRelativePath: `output/${role}-result.v1.json`,
       },
+      reviewedCommitId: role === "reviewer" ? "reviewed-commit" : undefined,
+      reviewedBaseCommitId: role === "reviewer" ? "base" : undefined,
       maxReadBytes: 4096,
       maxOutputBytes: 4096,
     });

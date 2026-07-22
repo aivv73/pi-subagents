@@ -48,6 +48,8 @@ export const startWorkerAttempt = async (
     allowedTrackedPaths: [...request.allowedTrackedPaths],
     resultPath: artifacts.outputPath,
     envelope,
+    reviewedCommitId: undefined,
+    reviewedBaseCommitId: undefined,
     maxReadBytes: 256 * 1024,
     maxOutputBytes: 64 * 1024,
   };

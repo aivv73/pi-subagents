@@ -14,9 +14,9 @@ The coordinator alone creates the local bare Git transport below its state direc
 
 ## Review
 
-Each review uses a separate exact Rift snapshot containing the current integration base and immutable fetched worker refs. The reviewer verifies identities, ancestry, stack shape, complete diff, scope, unrelated/suspicious changes, acceptance criteria, and required checks.
+Each review uses a separate exact Rift snapshot created from coordinator state containing the current integration base and immutable fetched worker ref; it never uses the worker or coordinator workspace directly. The reviewer receives only a fixed complete diff from assigned base to reviewed commit plus contained read/search. It verifies identities, ancestry, one-change shape, complete diff, scope, unrelated/suspicious changes, and the explicit user request. Project command execution and required checks are not implemented in this slice.
 
-Approval binds exact ordered commits and integration base. Reviewer rejection returns actionable findings to the original worker/workspace. Revision cycles are configurable, default one; every update requires a fresh review.
+Approval and rejection bind exact reviewed commit and integration base. Before accepting either decision, the coordinator rechecks the reviewer result, target revision facts, source fetched-ref/base bindings, and unchanged reviewer working-copy identity. Herdr settlement alone, malformed output, a moved ref/base, or tracked reviewer mutation fails closed. An accepted decision appends the corresponding semantic `review_approved` or `review_revision_requested` journal event. Reviewer rejection returns actionable findings to the original worker/workspace in the later revision-loop slice.
 
 Reviewer tracked mutation fails the review invocation.
 

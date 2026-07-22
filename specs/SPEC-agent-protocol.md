@@ -21,12 +21,12 @@ Before launch the coordinator creates and verifies an ignored contained area:
 
 The coordinator creates the artifact directories only after proving `/.pi-subagents/` is ignored in the local Git exclude policy. Input envelopes are version-one coordinator-written JSON plus a SHA-256 sidecar, mode `0400`, and validated before output use. Worker and reviewer result outputs are version-one, size-limited, strict-schema JSON, identity-bound to the envelope, written through a same-directory atomic rename, and rejected when regular-file, containment, symlink, or checksum checks fail. A Jujutsu commit-ID invariant proves artifact writes do not change the current task change.
 
-Current envelopes carry run/task/attempt/role IDs, the full user command as task/acceptance guidance, canonical root, declared tracked write paths, assigned base commit, and the fixed version-one output path. The worker supervisor separately retains Herdr pane and Rift identities. Model facts, checks, deadlines, and prompt hashes are not persisted yet.
+Current envelopes carry run/task/attempt/role IDs, the full user command as task/acceptance guidance, canonical root, declared tracked write paths, assigned base commit, and the fixed version-one output path. The worker/reviewer supervisors separately retain Herdr pane and Rift identities. Reviewer child guard configuration additionally fixes one reviewed commit and base solely for its read-only diff; it is not a generic revision selector. Model facts, checks, deadlines, and prompt hashes are not persisted yet.
 
 ## Outputs
 
 - Worker: exact run/task/attempt identity, one change/commit identity, and changed paths.
-- Reviewer: exact run/task/attempt and commit/base identity, approval or revision request, and findings.
+- Reviewer: exact run/task/attempt and commit/base identity, approval or revision request, and findings. The coordinator accepts it only after ref/base/target revalidation and proof that reviewer tracked state did not change.
 
 After writing output, the agent may print `PI_SUBAGENT_RESULT <relative-path>`. This marker and Herdr settlement are diagnostic only.
 

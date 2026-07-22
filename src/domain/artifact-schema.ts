@@ -50,6 +50,9 @@ export const ChildGuardConfigSchema = Schema.Struct({
   allowedTrackedPaths: Schema.Array(Schema.NonEmptyString),
   resultPath: Schema.NonEmptyString,
   envelope: AttemptEnvelopeSchema,
+  /** Present only for the reviewer; fixes its diff target without exposing a generic revision tool. */
+  reviewedCommitId: Schema.UndefinedOr(Schema.NonEmptyString),
+  reviewedBaseCommitId: Schema.UndefinedOr(Schema.NonEmptyString),
   maxReadBytes: Schema.Number,
   maxOutputBytes: Schema.Number,
 });

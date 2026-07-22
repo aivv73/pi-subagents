@@ -20,6 +20,8 @@ const config = {
     assignedBaseCommitId: "base",
     outputRelativePath: "output/worker-result.v1.json",
   },
+  reviewedCommitId: undefined,
+  reviewedBaseCommitId: undefined,
   maxReadBytes: 4096,
   maxOutputBytes: 4096,
 };

@@ -12,7 +12,7 @@ This is not a hostile-code OS sandbox. Approval of an executable may authorize b
 
 Reads/searches are contained in the canonical child root. `.jj`, `.git`, `.rift`, `.pi-subagents`, credential/secret paths, environment files, symlinks, and paths outside the root are protected. Worker writes are exact declared tracked paths only; both roles may write only their fixed result artifact through the coordinator protocol.
 
-Workers receive contained read/search/edit/write plus narrow Jujutsu identity/describe tools. Reviewers receive contained read/search and a fixed read-only Jujutsu diff. Reviewers cannot mutate tracked state. No child receives Git push/fetch, Jujutsu remote/bookmark, transport-path, or credential authority; the coordinator's fixed-argv local transport adapter is the sole publication authority. No other role or project configuration is supported yet.
+Workers receive contained read/search/edit/write plus narrow Jujutsu identity/describe tools. Reviewers receive contained read/search and one coordinator-fixed base-to-reviewed-commit Jujutsu diff; they cannot select another revision or mutate tracked state. No child receives Git push/fetch, Jujutsu remote/bookmark, transport-path, or credential authority; the coordinator's fixed-argv local transport adapter is the sole publication authority. No other role or project configuration is supported yet.
 
 ## Environment, commands, and network
 

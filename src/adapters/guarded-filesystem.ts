@@ -29,6 +29,8 @@ export class GuardedFilesystem {
     readonly role: ChildGuardConfig["role"],
     readonly allowedTrackedPaths: ReadonlySet<string>,
     readonly maxReadBytes: number,
+    readonly reviewedCommitId: string | undefined,
+    readonly reviewedBaseCommitId: string | undefined,
   ) {
     this.#root = root;
   }
@@ -38,7 +40,13 @@ export class GuardedFilesystem {
     const root = await realpath(config.root);
     const metadata = await lstat(root);
     if (!metadata.isDirectory() || metadata.isSymbolicLink()) throw new GuardDeniedError("guard root must be a real directory");
-    return new GuardedFilesystem(root, config.role, new Set(config.allowedTrackedPaths), config.maxReadBytes);
+    if (config.role === "reviewer" && (config.reviewedCommitId === undefined || config.reviewedBaseCommitId === undefined)) {
+      throw new GuardDeniedError("reviewer requires coordinator-fixed base and reviewed commits");
+    }
+    if (config.role === "worker" && (config.reviewedCommitId !== undefined || config.reviewedBaseCommitId !== undefined)) {
+      throw new GuardDeniedError("worker may not receive review identities");
+    }
+    return new GuardedFilesystem(root, config.role, new Set(config.allowedTrackedPaths), config.maxReadBytes, config.reviewedCommitId, config.reviewedBaseCommitId);
   }
 
   get root(): string {
@@ -124,7 +132,7 @@ export class GuardedFilesystem {
 
   async jjDiff(): Promise<string> {
     if (this.role !== "reviewer") throw new GuardDeniedError("only reviewers may request a diff");
-    return this.runJj(["diff", "--git", "--color", "never"]);
+    return this.runJj(["diff", "--git", "--color", "never", "--from", this.reviewedBase(), "--to", this.reviewedCommitId!]);
   }
 
   private async runJj(arguments_: readonly string[]): Promise<string> {
@@ -209,6 +217,12 @@ export class GuardedFilesystem {
 
   private assertWorker(): void {
     if (this.role !== "worker") throw new GuardDeniedError("reviewers cannot mutate task state");
+  }
+
+  private reviewedBase(): string {
+    // The envelope is validated by the child extension before the guard is constructed.
+    // Reviewer diffs always compare the coordinator-assigned base, never the snapshot's @.
+    return this.reviewedBaseCommitId!;
   }
 
   private assertWorkerWrite(path: string): void {

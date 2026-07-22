@@ -28,7 +28,10 @@ const loadConfig = (): ChildGuardConfig => {
     if (
       !Number.isInteger(config.maxReadBytes) || config.maxReadBytes <= 0 ||
       !Number.isInteger(config.maxOutputBytes) || config.maxOutputBytes <= 0 ||
-      config.role !== config.envelope.role || config.root !== config.envelope.root
+      config.role !== config.envelope.role || config.root !== config.envelope.root ||
+      (config.role === "reviewer" && (config.reviewedCommitId === undefined || config.reviewedBaseCommitId === undefined)) ||
+      (config.role === "reviewer" && config.reviewedBaseCommitId !== config.envelope.assignedBaseCommitId) ||
+      (config.role === "worker" && (config.reviewedCommitId !== undefined || config.reviewedBaseCommitId !== undefined))
     ) {
       throw new Error("invalid role, root, or size policy");
     }

@@ -1,10 +1,14 @@
 import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
+import { execFile as execFileCallback } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { promisify } from "node:util";
 
 import { describe, expect, it } from "vitest";
 
 import { GuardDeniedError, GuardedFilesystem } from "./guarded-filesystem.js";
+
+const execFile = promisify(execFileCallback);
 
 const withRoot = async (test: (root: string) => Promise<void>): Promise<void> => {
   const root = await mkdtemp(join(tmpdir(), "pi-subagents-guard-"));
@@ -38,6 +42,8 @@ const config = (root: string, role: "worker" | "reviewer") => ({
     assignedBaseCommitId: "base",
     outputRelativePath: `output/${role}-result.v1.json`,
   },
+  reviewedCommitId: role === "reviewer" ? "reviewed-commit" : undefined,
+  reviewedBaseCommitId: role === "reviewer" ? "base" : undefined,
   maxReadBytes: 4096,
   maxOutputBytes: 4096,
 });
@@ -67,5 +73,24 @@ describe("guarded child filesystem", () => {
       await expect(reviewer.write("src/allowed.txt", "nope")).rejects.toBeInstanceOf(GuardDeniedError);
       await expect(reviewer.jjDescribe("nope")).rejects.toBeInstanceOf(GuardDeniedError);
     });
+  });
+
+  it("gives a reviewer only the coordinator-fixed base-to-reviewed revision diff", async () => {
+    const root = await mkdtemp(join(tmpdir(), "pi-subagents-review-diff-"));
+    try {
+      await execFile("jj", ["git", "init", "--colocate", root]);
+      await writeFile(join(root, "README.md"), "base\n");
+      await execFile("jj", ["describe", "-m", "base"], { cwd: root });
+      const base = (await execFile("jj", ["log", "--no-graph", "-r", "@", "-T", "commit_id"], { cwd: root })).stdout.trim();
+      await execFile("jj", ["new", base], { cwd: root });
+      await writeFile(join(root, "README.md"), "reviewed\n");
+      await execFile("jj", ["describe", "-m", "review target"], { cwd: root });
+      const reviewed = (await execFile("jj", ["log", "--no-graph", "-r", "@", "-T", "commit_id"], { cwd: root })).stdout.trim();
+      const reviewer = await GuardedFilesystem.create({ ...config(root, "reviewer"), reviewedCommitId: reviewed, reviewedBaseCommitId: base });
+
+      await expect(reviewer.jjDiff()).resolves.toContain("reviewed");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });

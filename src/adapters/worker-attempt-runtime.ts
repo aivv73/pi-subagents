@@ -6,6 +6,7 @@ import { createAttemptArtifacts, readResultArtifact, type AttemptArtifacts } fro
 import type { AttemptEnvelope, ResultArtifact } from "../domain/artifact-schema.js";
 import type { RevisionIdentity, WorkerRevisionFacts } from "../domain/worker-attempt.js";
 import type { HerdrAgent, HerdrObservation, RiftSnapshot, WorkerAttemptRuntime } from "../ports/worker-attempt.js";
+import type { ReviewerAttemptRuntime } from "../ports/reviewer-attempt.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -59,7 +60,7 @@ const parseAgentInfo = (output: string): AgentInfo => {
 const sleep = async (milliseconds: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 /** Fixed-argv command adapter. It never invokes Rift removal, generic shells, or upstream Git. */
-export class NodeWorkerAttemptRuntime implements WorkerAttemptRuntime {
+export class NodeWorkerAttemptRuntime implements WorkerAttemptRuntime, ReviewerAttemptRuntime {
   constructor(
     private readonly options: {
       readonly riftExecutable?: string;
@@ -98,16 +99,20 @@ export class NodeWorkerAttemptRuntime implements WorkerAttemptRuntime {
   }
 
   async inspectWorkerRevision(root: string, assignedBaseCommitId: string): Promise<WorkerRevisionFacts> {
+    return this.inspectRevision(root, "@", assignedBaseCommitId);
+  }
+
+  async inspectRevision(root: string, revision: string, assignedBaseCommitId: string): Promise<WorkerRevisionFacts> {
     const jj = this.options.jjExecutable ?? "jj";
-    const identity = await this.currentRevision(root);
+    const identity = parseIdentity(await command(jj, ["log", "--no-graph", "-r", revision, "-T", 'commit_id ++ "\\t" ++ change_id'], root));
     const [parents, revisionCommits, descendant, description, changedPaths, trackedPaths, conflicted] = await Promise.all([
-      command(jj, ["log", "--no-graph", "-r", "@", "-T", 'parents.map(|p| p.commit_id()).join(",")'], root),
-      command(jj, ["log", "--no-graph", "-r", `@ & descendants(${assignedBaseCommitId})`, "-T", "commit_id"], root),
-      command(jj, ["log", "--no-graph", "-r", `@ & descendants(${assignedBaseCommitId})`, "-T", "commit_id"], root),
-      command(jj, ["log", "--no-graph", "-r", "@", "-T", "description"], root),
-      command(jj, ["diff", "--name-only", "-r", "@"], root),
-      command(jj, ["file", "list", "-r", "@"], root),
-      command(jj, ["log", "--no-graph", "-r", "@", "-T", "conflict"], root),
+      command(jj, ["log", "--no-graph", "-r", revision, "-T", 'parents.map(|p| p.commit_id()).join(",")'], root),
+      command(jj, ["log", "--no-graph", "-r", `${revision} & descendants(${assignedBaseCommitId})`, "-T", "commit_id"], root),
+      command(jj, ["log", "--no-graph", "-r", `${revision} & descendants(${assignedBaseCommitId})`, "-T", "commit_id"], root),
+      command(jj, ["log", "--no-graph", "-r", revision, "-T", "description"], root),
+      command(jj, ["diff", "--name-only", "-r", revision], root),
+      command(jj, ["file", "list", "-r", revision], root),
+      command(jj, ["log", "--no-graph", "-r", revision, "-T", "conflict"], root),
     ]);
     return {
       ...identity,
@@ -120,6 +125,10 @@ export class NodeWorkerAttemptRuntime implements WorkerAttemptRuntime {
       changedPaths: changedPaths.trim() === "" ? [] : changedPaths.trim().split("\n"),
       trackedArtifactPaths: trackedPaths.trim().split("\n").filter((path) => path === ".pi-subagents" || path.startsWith(".pi-subagents/")),
     };
+  }
+
+  resolveTransportRef(root: string, transportRef: string): Promise<RevisionIdentity> {
+    return command(this.options.jjExecutable ?? "jj", ["log", "--no-graph", "-r", `${transportRef}@pi-subagents-transport`, "-T", 'commit_id ++ "\\t" ++ change_id'], root).then(parseIdentity);
   }
 
   async startAgent(request: { readonly name: string; readonly cwd: string; readonly argv: readonly string[]; readonly environment: NodeJS.ProcessEnv }): Promise<HerdrAgent> {
