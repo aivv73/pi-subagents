@@ -1,0 +1,29 @@
+# DESIGN-herdr-rift-jj: Herdr-hosted Rift snapshots with Jujutsu change transport
+
+Status: confirmed, 2026-07-22, aivv
+
+Workers and reviewers run as interactive Pi subprocesses hosted by Herdr. Worker filesystems are exact Rift snapshots containing independent colocated Jujutsu repositories. Reviewed revisions move through a coordinator-owned local bare Git repository and are integrated by the coordinator with Jujutsu.
+
+## Rationale
+
+Herdr provides persistent real terminals, agent visibility, attention state, and user inspection. Making it authoritative for process hosting satisfies the product goal; Effect remains authoritative for semantic scheduling and results.
+
+Rift provides fast copy-on-write snapshots including ignored dependencies when `copyAll` is enabled. Rift does not create shared Jujutsu workspaces. Treating each snapshot as an independent repository and using explicit Git transport avoids unsupported `.jj` metadata surgery.
+
+The worker creates a fresh Jujutsu task change from the assigned base because an exact snapshot duplicates the source working-copy change ID. Temporary bookmark transport preserves commit/change identity while keeping upstream credentials away from workers.
+
+## Tradeoffs
+
+Independent repositories lose shared Jujutsu operation history and require explicit publication, fetch, lease, and cleanup. Approved parallel revisions may conflict when integrated against a newer base, so changed effective diffs require conflict resolution and fresh review.
+
+Herdr process hosting is less directly typed than in-process Pi SDK sessions and requires capability negotiation against the installed Herdr protocol. Structured artifacts and repository checks, not terminal scraping, compensate for this boundary.
+
+## Rejected alternatives
+
+- In-process Pi SDK workers do not appear as Herdr-managed terminal agents.
+- Copying a `.jj` repository is not `jj workspace add` and cannot be treated as shared state.
+- Replacing copied `.jj` metadata with a workspace pointer is unsupported.
+- Terminal output and Herdr `done`/`idle` cannot prove semantic completion.
+
+This decision is realized by [SPEC-agent-protocol](SPEC-agent-protocol.md) and [SPEC-change-integration](SPEC-change-integration.md).
+

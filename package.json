@@ -1,0 +1,60 @@
+{
+  "name": "@aivv/pi-subagents",
+  "version": "0.1.0-next.0",
+  "description": "Reviewer-controlled isolated Pi subagent orchestration",
+  "license": "MIT OR Apache-2.0",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "subagents"
+  ],
+  "files": [
+    "dist/",
+    "src/",
+    "schemas/",
+    "prompts/",
+    "LICENSE-MIT",
+    "LICENSE-APACHE",
+    "NOTICE",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "README.md"
+  ],
+  "main": "./dist/extension.js",
+  "types": "./dist/extension.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/extension.d.ts",
+      "import": "./dist/extension.js"
+    }
+  },
+  "pi": {
+    "extensions": [
+      "./dist/extension.js"
+    ]
+  },
+  "scripts": {
+    "clean": "rm -rf dist coverage *.tgz",
+    "build": "tsc --project tsconfig.json",
+    "test": "vitest run",
+    "check": "npm run build && npm run test",
+    "prepack": "npm run build",
+    "pack:check": "npm pack --dry-run"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "dependencies": {
+    "effect": "^3.22.0"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.81.1",
+    "@types/node": "^24.12.4",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.9"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}
