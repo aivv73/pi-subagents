@@ -25,11 +25,11 @@ Current envelopes carry run/task/attempt/role IDs, the full user command as task
 
 ## Outputs
 
-- Worker: exact run/task/attempt identity, one change/commit identity, and changed paths.
+- Worker: exact run/task/attempt identity, one change/commit identity, and changed paths. A reviewer-requested amendment reuses the same worker attempt/Rift/pane/change ID, replaces this artifact atomically with a changed commit identity, and receives the reviewer findings as coordinator-provided text.
 - Reviewer: exact run/task/attempt and commit/base identity, approval or revision request, and findings. The coordinator accepts it only after ref/base/target revalidation and proof that reviewer tracked state did not change.
 
 After writing output, the agent may print `PI_SUBAGENT_RESULT <relative-path>`. This marker and Herdr settlement are diagnostic only.
 
-Missing or invalid output fails this slice directly; result repair is unsupported. Worker/reviewer envelope/output contracts are version one. Migration and recovery decoding are unsupported.
+Missing or invalid output fails this slice directly; it neither consumes the one reviewer-revision budget nor starts execution retry. Result repair is unsupported. Worker/reviewer envelope/output contracts are version one. Migration and recovery decoding are unsupported.
 
 Revision authority follows [SPEC-change-integration](SPEC-change-integration.md).

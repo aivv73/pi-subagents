@@ -12,6 +12,7 @@ export interface PublishWorkerAttemptRequest {
   readonly stateDirectory: string;
   readonly coordinatorRoot: string;
   readonly causationId: string;
+  readonly previousCommitId?: string;
 }
 
 /** Rechecks mutable worker facts, journals the effect, then transports one exact revision. */
@@ -44,6 +45,9 @@ export const publishValidatedWorkerAttempt = async (
   ) {
     throw new WorkerPublicationError("worker artifact or revision is stale after validation");
   }
+  if (request.previousCommitId !== undefined && currentResult.commitId === request.previousCommitId) {
+    throw new WorkerPublicationError("worker revision did not amend the previously reviewed commit");
+  }
 
   const revision: ExactWorkerRevision = {
     workerRoot: attempt.attempt.snapshot.root,
@@ -68,6 +72,7 @@ export const publishValidatedWorkerAttempt = async (
       stateDirectory: request.stateDirectory,
       coordinatorRoot: request.coordinatorRoot,
       revision,
+      previousCommitId: request.previousCommitId,
     });
     if (
       fetched.transportRef !== revision.transportRef ||

@@ -65,6 +65,19 @@ describe("event-sourced single-run reducer", () => {
     expect(state.status).toBe(expectedStatus);
   });
 
+  it("rejects a second reviewer rejection after the one permitted worker amendment", () => {
+    const event = eventFactory();
+    const events = [
+      event({ _tag: "run_created", task: "task" }),
+      event({ _tag: "worker_started" }),
+      event({ _tag: "worker_result_validated", commitId: "commit-1" }),
+      event({ _tag: "review_revision_requested", commitId: "commit-1", findings: "first finding" }),
+      event({ _tag: "worker_revised", commitId: "commit-2" }),
+    ];
+    expect(() => replay([...events, event({ _tag: "review_revision_requested", commitId: "commit-2", findings: "second finding" })]))
+      .toThrow("revision budget is exhausted");
+  });
+
   it("keeps an integrated change successful when cleanup warns", () => {
     const events = successfulRevisionRun().slice(0, -1);
     const previous = events.at(-1)!;

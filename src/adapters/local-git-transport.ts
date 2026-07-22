@@ -91,11 +91,20 @@ export class LocalGitTransport implements GitTransport {
 
     // Fetch establishes Jujutsu's remote bookmark observation used by its force-with-lease push checks.
     await run("jj", ["git", "fetch", "--remote", transportRemote, "--branch", request.revision.transportRef], request.revision.workerRoot);
-    if (await remoteCommit(barePath, request.revision.transportRef) !== undefined) {
+    const observedRemoteCommitId = await remoteCommit(barePath, request.revision.transportRef);
+    if (request.previousCommitId === undefined && observedRemoteCommitId !== undefined) {
       throw new LocalGitTransportError("attempt transport ref already exists; refusing to overwrite it");
     }
-
-    await run("jj", ["bookmark", "create", request.revision.transportRef, "--revision", request.revision.commitId], request.revision.workerRoot);
+    if (request.previousCommitId !== undefined && observedRemoteCommitId !== request.previousCommitId) {
+      throw new LocalGitTransportError("attempt transport ref does not match the revision publication lease");
+    }
+    await run(
+      "jj",
+      request.previousCommitId === undefined
+        ? ["bookmark", "create", request.revision.transportRef, "--revision", request.revision.commitId]
+        : ["bookmark", "set", request.revision.transportRef, "--revision", request.revision.commitId],
+      request.revision.workerRoot,
+    );
     await run("jj", ["git", "push", "--remote", transportRemote, "--bookmark", request.revision.transportRef], request.revision.workerRoot);
 
     const pushedCommitId = await remoteCommit(barePath, request.revision.transportRef);

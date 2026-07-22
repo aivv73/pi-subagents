@@ -23,7 +23,7 @@ Runs terminate as:
 
 ## Failure and retries
 
-The state model permits exactly one reviewer-requested revision. Execution retry and result-artifact repair are unsupported. A blocked worker or reviewer produces a `blocked` semantic state; it is never approved automatically.
+The state model permits exactly one reviewer-requested revision. The implemented revision reuses the original worker attempt/Rift/pane/change ID, requires an amended commit and fresh publication/review, and invalidates the old commit's approval/publication facts. A second rejection fails while retaining diagnostics. Execution retry and result-artifact repair are unsupported and cannot consume the reviewer-revision budget. A blocked worker or reviewer produces a `blocked` semantic state; it is never approved automatically.
 
 ## Cancellation
 

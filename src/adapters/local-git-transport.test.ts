@@ -55,8 +55,17 @@ describe("LocalGitTransport", () => {
         stateDirectory: join(root, "state"),
         coordinatorRoot: source,
         revision: { workerRoot: worker, assignedBaseCommitId: baseCommitId, ...revision, transportRef },
+        previousCommitId: undefined,
       });
       const bare = join(root, "state", "transport.git");
+
+      await writeFile(join(worker, "README.md"), "amended worker update\n");
+      await jj(worker, ["describe", "-m", "amended worker task"]);
+      const amended = await identity(worker);
+      const republished = await new LocalGitTransport().publishAndFetch({
+        stateDirectory: join(root, "state"), coordinatorRoot: source,
+        revision: { workerRoot: worker, assignedBaseCommitId: baseCommitId, ...amended, transportRef }, previousCommitId: revision.commitId,
+      });
 
       expect(published).toEqual({
         transportRef,
@@ -64,7 +73,9 @@ describe("LocalGitTransport", () => {
         fetchedCommitId: revision.commitId,
         fetchedChangeId: revision.changeId,
       });
-      expect((await execFile("git", ["--git-dir", bare, "rev-parse", `refs/heads/${transportRef}`])).stdout.trim()).toBe(revision.commitId);
+      expect(republished.fetchedCommitId).toBe(amended.commitId);
+      expect(republished.fetchedChangeId).toBe(revision.changeId);
+      expect((await execFile("git", ["--git-dir", bare, "rev-parse", `refs/heads/${transportRef}`])).stdout.trim()).toBe(amended.commitId);
       expect(await identity(source)).toEqual(sourceBefore);
       expect(await jj(source, ["git", "remote", "list"])).toContain(`pi-subagents-transport ${bare}`);
       expect(await jj(worker, ["git", "remote", "list"])).toContain(`pi-subagents-transport ${bare}`);
@@ -81,6 +92,7 @@ describe("LocalGitTransport", () => {
         stateDirectory: join(root, "state"),
         coordinatorRoot: source,
         revision: { workerRoot: worker, assignedBaseCommitId: baseCommitId, ...revision, transportRef },
+        previousCommitId: undefined,
       };
       await transport.publishAndFetch(request);
       const bare = join(root, "state", "transport.git");

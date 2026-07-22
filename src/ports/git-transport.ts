@@ -4,6 +4,8 @@ export interface TransportPublicationRequest {
   readonly stateDirectory: string;
   readonly coordinatorRoot: string;
   readonly revision: ExactWorkerRevision;
+  /** Undefined creates the unique attempt ref; set value updates that same ref under a lease. */
+  readonly previousCommitId: string | undefined;
 }
 
 export interface FetchedTransportRevision {
