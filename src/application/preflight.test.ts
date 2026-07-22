@@ -30,6 +30,7 @@ const fixture = (overrides: Partial<Record<string, CommandResult>> = {}) => {
     [key("jj", ["root"])]: success("/workspace\n"),
     [key("git", ["rev-parse", "--show-toplevel"])]: success("/workspace\n"),
     [key("jj", ["log", "--no-graph", "-r", "@", "-T", "empty"])]: success("true"),
+    [key("jj", ["log", "--no-graph", "-r", "@", "-T", "conflict"])]: success("false"),
     [key("jj", ["log", "--no-graph", "-r", "@-", "-T", 'commit_id ++ "\\t" ++ change_id'])]: success("base-commit\tbase-change"),
     [key("jj", ["log", "--no-graph", "-r", "@- & immutable_heads()", "-T", "commit_id"])]: success("base-commit"),
     [key("git", ["rev-parse", "--git-path", "info/exclude"])]: success(".git/info/exclude\n"),
@@ -134,6 +135,7 @@ describe("runPreflight", () => {
     const { environment } = fixture({
       [key("git", ["rev-parse", "--show-toplevel"])]: success("/different-root\n"),
       [key("jj", ["log", "--no-graph", "-r", "@", "-T", "empty"])]: success("false"),
+      [key("jj", ["log", "--no-graph", "-r", "@", "-T", "conflict"])]: success("true"),
       [key("jj", ["log", "--no-graph", "-r", "@- & immutable_heads()", "-T", "commit_id"])]: success(""),
     });
     const result = await runPreflight(request(), environment);
@@ -142,6 +144,7 @@ describe("runPreflight", () => {
       issues: expect.arrayContaining([
         expect.objectContaining({ code: "not_colocated_jj_git" }),
         expect.objectContaining({ code: "working_copy_not_empty" }),
+        expect.objectContaining({ code: "working_copy_conflicted" }),
         expect.objectContaining({ code: "assigned_base_mutable" }),
       ]),
     });

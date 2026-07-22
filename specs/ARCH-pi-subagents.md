@@ -1,6 +1,6 @@
 # ARCH-pi-subagents: Pi subagent orchestration architecture
 
-`@aivv/pi-subagents` is a TypeScript Pi extension for reviewer-controlled, isolated subagent orchestration. Its current package registers the TUI-only `/subagents run <task>` command surface, provides the event-sourced foundation and isolated worker/reviewer/publication/revision/integration/cleanup services for one direct run, and invokes read-only preflight. The parent command is not yet bound to that coordinator, so a passing preflight still creates no journal, Rift, transport, Herdr pane, or agent.
+`@aivv/pi-subagents` is a TypeScript Pi extension for reviewer-controlled, isolated subagent orchestration. Its current package registers the TUI-only `/subagents run --paths path[,path...] <task>` command surface, provides the event-sourced foundation and isolated worker/reviewer/publication/revision/integration/cleanup services for one direct run, and invokes read-only preflight and direct-task admission. The parent command is not yet bound to that coordinator, so a passing admission still creates no journal, Rift, transport, Herdr pane, or agent.
 
 ## Boundaries
 
@@ -22,7 +22,7 @@ Resources have exactly one journaled owner. Retention transfers cleanup responsi
 
 ## Control and data flow
 
-The current domain flow is one task: creation, worker result, reviewer approval or one revision request, integration, and cleanup. It derives cancellation, blocked-agent, protocol-failure, and cleanup-warning outcomes from validated journal events. Before that flow can start, the Pi adapter checks TUI/trust/task/model gates and reads fixed runtime, filesystem, colocated Jujutsu/Git, state-path, artifact-ignore, and installed Herdr-schema facts.
+The current domain flow is one task: creation, worker result, reviewer approval or one revision request, integration, and cleanup. It derives cancellation, blocked-agent, protocol-failure, and cleanup-warning outcomes from validated journal events. Before that flow can start, the Pi adapter checks TUI/trust/task/model gates and reads fixed runtime, filesystem, colocated Jujutsu/Git, state-path, artifact-ignore, and installed Herdr-schema facts. It then requires one or more exact declared repository-relative regular-file targets, rejects protected/absolute/traversal/symlink/escaping paths, requires a clean conflict-free source `@`, and refuses a state directory with an unfinished retained run.
 
 The one-worker supervisor creates a `copyAll`, no-hooks Rift snapshot without a source-removal operation, records its copied change identity, creates a fresh task change from exact base, creates ignored artifacts, starts a guarded child Pi through Herdr, waits for `idle` readiness before sending the full user command, and retains blocked/invalid resources. Herdr settlement becomes a semantic result only after artifact and structural Jujutsu validation.
 
@@ -36,7 +36,7 @@ The integration service validates the approved reviewer decision, current fetche
 
 Cancellation journals intent, asks each known agent to stop, waits a bounded interval, sends one `Ctrl+C` through its verified pane when necessary, and always retains Rifts/panes/refs for inspection. Verified post-integration cleanup lease-deletes the exact temporary ref, closes panes, removes only non-source Rifts, and runs Rift GC. Each step is idempotent and independent: complete cleanup journals `cleanup_succeeded`; any post-integration cleanup warning journals `cleanup_failed` and leaves integration intact. No decomposer, DAG, multi-worker scheduler, execution retry, result repair, rebase/conflict resolver, upstream update, recovery/resume, or old-run cleanup exists yet.
 
-The Pi adapter renders a compact semantic widget for coordinator phases and terminal notifications. It never maps Herdr idle/done to validation, approval, or integration. Until dispatch is bound, the only displayed live command state is an honest preflight-passed/not-dispatched status. Package verification checks required distributable source/assets/licenses and rejects journals, repository metadata, credentials, environments, and binary archives from the tarball.
+The Pi adapter renders a compact semantic widget for coordinator phases and terminal notifications. It never maps Herdr idle/done to validation, approval, or integration. Until dispatch is bound, the only displayed live command state is an honest preflight-and-admission-passed/not-dispatched status. Package verification checks required distributable source/assets/licenses and rejects journals, repository metadata, credentials, environments, and binary archives from the tarball.
 
 ## Persistence and recovery
 

@@ -18,6 +18,7 @@ export type PreflightIssueCode =
   | "missing_herdr_capability"
   | "not_colocated_jj_git"
   | "working_copy_not_empty"
+  | "working_copy_conflicted"
   | "assigned_base_unavailable"
   | "assigned_base_mutable"
   | "state_directory_unwritable"
@@ -181,6 +182,10 @@ export const runPreflight = async (
   const workingCopyEmpty = await runRequired(environment, "jj", ["log", "--no-graph", "-r", "@", "-T", "empty"], request.cwd, issues);
   if (workingCopyEmpty !== undefined && workingCopyEmpty.trim() !== "true") {
     issues.push(issue("working_copy_not_empty", "Current Jujutsu working copy @ must be empty."));
+  }
+  const workingCopyConflict = await runRequired(environment, "jj", ["log", "--no-graph", "-r", "@", "-T", "conflict"], request.cwd, issues);
+  if (workingCopyConflict !== undefined && workingCopyConflict.trim() !== "false") {
+    issues.push(issue("working_copy_conflicted", "Current Jujutsu working copy @ must be conflict-free."));
   }
 
   const base = await runRequired(

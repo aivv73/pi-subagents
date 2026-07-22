@@ -4,7 +4,7 @@ The current coordinator foundation owns one direct task per run. It has no graph
 
 ## Decomposition
 
-The direct task originates from the user command. It has no dependencies and does not invoke a decomposer. Worker-proposed tasks, task repair, and task graph validation are unsupported.
+The direct task originates from `/subagents run --paths path[,path...] <task>`. Admission requires a clean conflict-free source working copy and no unfinished retained run in that repository state directory, but neither condition starts recovery. It has no dependencies and does not invoke a decomposer. Worker-proposed tasks, task repair, and task graph validation are unsupported.
 
 ## States
 

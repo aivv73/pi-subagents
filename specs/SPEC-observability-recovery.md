@@ -4,7 +4,7 @@ Pi displays semantic orchestration state; Herdr displays live terminals. UI labe
 
 ## Active runs
 
-In TUI mode, the current compact widget shows a semantic phase, exact integrated revision when known, retained resources when known, and bounded detail. Its phases distinguish worker execution, worker validation, review, integration, cleanup, blocked/failure, cancellation, success, and cleanup warning; Herdr idle/done is never semantic success. A passed preflight is explicitly labelled not dispatched while the command-to-coordinator binding remains absent.
+In TUI mode, the current compact widget shows a semantic phase, exact integrated revision when known, retained resources when known, and bounded detail. Its phases distinguish worker execution, worker validation, review, integration, cleanup, blocked/failure, cancellation, success, and cleanup warning; Herdr idle/done is never semantic success. Passed preflight and direct-task admission are explicitly labelled not dispatched while the command-to-coordinator binding remains absent.
 
 `/subagents` opens a responsive overlay for runs, tasks, attempts, reviews, integration, bounded journal details, and retained resources. Actions include inspect, pause dispatch, resume, cancel, eligible retry, recovery, and cleanup. Arbitrary graph/state editing is unsupported.
 

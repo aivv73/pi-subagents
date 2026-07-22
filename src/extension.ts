@@ -1,6 +1,8 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 import { nodePreflightEnvironment } from "./adapters/node-preflight.js";
+import { NodeDirectTaskAdmissionRuntime } from "./adapters/direct-task-admission.js";
+import { admitDirectTask } from "./application/direct-task-admission.js";
 import { runPreflight } from "./application/preflight.js";
 import { parseRunInvocation } from "./command.js";
 import { progressWidget } from "./application/progress.js";
@@ -34,9 +36,20 @@ export default function piSubagentsExtension(pi: ExtensionAPI): void {
         return;
       }
 
+      const admission = await admitDirectTask({
+        sourceRoot: preflight.evidence.sourceRoot,
+        stateDirectory: preflight.evidence.stateDirectory,
+        allowedTrackedPaths: invocation.allowedTrackedPaths,
+      }, new NodeDirectTaskAdmissionRuntime());
+      if (admission._tag === "rejected") {
+        context.ui.setWidget?.("pi-subagents", progressWidget({ phase: "blocked", detail: "Direct-task admission rejected before resources were created." }));
+        context.ui.notify(`Direct-task admission rejected: ${admission.reasons.join(" ")}`, "error");
+        return;
+      }
+
       // The public coordinator binding is intentionally deferred; do not misrepresent a passed
       // preflight or a Herdr lifecycle label as worker validation, review, or integration.
-      context.ui.setWidget?.("pi-subagents", progressWidget({ phase: "preflight", detail: "Preflight passed; coordinator dispatch is not yet bound to this command." }));
+      context.ui.setWidget?.("pi-subagents", progressWidget({ phase: "preflight", detail: "Preflight and direct-task admission passed; coordinator dispatch is not yet bound to this command." }));
       context.ui.notify(
         `Preflight passed for “${invocation.task}”, but worker orchestration is not implemented yet.`,
         "info",

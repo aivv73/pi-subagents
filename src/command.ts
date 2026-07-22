@@ -4,7 +4,7 @@
  */
 export type RunInvocation =
   | { readonly _tag: "Rejected"; readonly message: string }
-  | { readonly _tag: "Accepted"; readonly task: string };
+  | { readonly _tag: "Accepted"; readonly task: string; readonly allowedTrackedPaths: readonly string[] };
 
 export type PiMode = "tui" | "rpc" | "json" | "print";
 
@@ -16,21 +16,45 @@ export const parseRunInvocation = (mode: PiMode, argumentsText: string): RunInvo
     };
   }
 
-  const [command, ...taskWords] = argumentsText.trim().split(/\s+/);
+  const words = argumentsText.trim().split(/\s+/);
+  const [command, ...arguments_] = words;
   if (command !== "run") {
     return {
       _tag: "Rejected",
-      message: "Usage: /subagents run <task>",
+      message: "Usage: /subagents run --paths path[,path...] [--paths path[,path...]] <task>",
     };
   }
+  if (arguments_.length === 0) {
+    return { _tag: "Rejected", message: "A non-empty task is required. Usage: /subagents run --paths path <task>" };
+  }
 
-  const task = taskWords.join(" ").trim();
+  const paths: string[] = [];
+  let offset = 0;
+  while (arguments_[offset] === "--paths") {
+    const value = arguments_[offset + 1];
+    if (value === undefined || value.startsWith("--")) {
+      return { _tag: "Rejected", message: "Each --paths flag requires a non-empty comma-separated value." };
+    }
+    const entries = value.split(",");
+    if (entries.some((entry) => entry.trim() === "")) {
+      return { _tag: "Rejected", message: "--paths must not contain an empty path." };
+    }
+    paths.push(...entries.map((entry) => entry.trim()));
+    offset += 2;
+  }
+  if (arguments_[offset]?.startsWith("--")) {
+    return { _tag: "Rejected", message: `Unsupported option: ${arguments_[offset]}` };
+  }
+  const task = arguments_.slice(offset).join(" ").trim();
   if (task.length === 0) {
     return {
       _tag: "Rejected",
-      message: "A non-empty task is required. Usage: /subagents run <task>",
+      message: "A non-empty task is required. Usage: /subagents run --paths path <task>",
     };
   }
+  if (paths.length === 0) {
+    return { _tag: "Rejected", message: "At least one --paths declaration is required." };
+  }
 
-  return { _tag: "Accepted", task };
+  return { _tag: "Accepted", task, allowedTrackedPaths: [...new Set(paths)] };
 };

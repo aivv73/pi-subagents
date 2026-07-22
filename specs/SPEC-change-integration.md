@@ -1,6 +1,6 @@
 # SPEC-change-integration: Isolated revision, review, and integration protocol
 
-One worker attempt exclusively owns one Rift workspace, Herdr pane, fresh Jujutsu task change, artifact area, and `pi-subagents/<run>/<task>/<attempt>` transport ref. The coordinator source workspace is never exposed to agents. The current implementation creates and retains the snapshot/pane/artifact/task-change subset and publishes/fetches that one ref; ref cleanup is not implemented yet.
+One worker attempt exclusively owns one Rift workspace, Herdr pane, fresh Jujutsu task change, artifact area, and `pi-subagents/<run>/<task>/<attempt>` transport ref. The coordinator source workspace is never exposed to agents. The current implementation creates and retains the snapshot/pane/artifact/task-change subset, publishes/fetches that one ref, and removes the exact ref only after verified integration; pre-integration resources remain retained.
 
 ## Revision contract
 
@@ -24,7 +24,7 @@ Reviewer tracked mutation fails the review invocation.
 
 ## Integration
 
-The current single-task integration requires an exact `approved` reviewer decision, fetched transport commit/change identity, approved revision facts, a clean source `@`, and source `@-` equal to the assigned base immediately before mutation. Any drift, stale approval/ref, scope/shape failure, or structural conflict returns a retained failure and does not mutate source.
+The current single-task integration requires an exact `approved` reviewer decision, fetched transport commit/change identity, approved revision facts, a clean source `@`, and source `@-` equal to the assigned base immediately before mutation. Public direct-task admission separately requires that source condition before dispatch and rejects a repository state directory with an unfinished run; it does not resume or clean that run. Any drift, stale approval/ref, scope/shape failure, or structural conflict returns a retained failure and does not mutate source.
 
 On success the coordinator journals the pre-mutation operation ID, runs only `jj new <approved-commit>` in source, then records the resulting operation ID. It requires the new source `@` to be a conflict-free empty change directly parented by the approved commit. File text and command success alone cannot prove integration, and worker files are never copied into source.
 
