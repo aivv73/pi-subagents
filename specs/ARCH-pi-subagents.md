@@ -1,6 +1,6 @@
 # ARCH-pi-subagents: Pi subagent orchestration architecture
 
-`@aivv/pi-subagents` is a TypeScript Pi extension for reviewer-controlled, isolated subagent orchestration. Its current package registers the TUI-only `/subagents run <task>` command surface, provides the event-sourced foundation for one direct worker/reviewer run, and invokes read-only preflight. A passing preflight still creates no journal, Rift, transport, Herdr pane, or agent because the worker flow is not implemented yet.
+`@aivv/pi-subagents` is a TypeScript Pi extension for reviewer-controlled, isolated subagent orchestration. Its current package registers the TUI-only `/subagents run <task>` command surface, provides the event-sourced foundation for one direct worker/reviewer run, invokes read-only preflight, and contains a one-worker attempt supervisor. The parent command does not invoke the supervisor yet, so a passing preflight still creates no journal, Rift, transport, Herdr pane, or agent.
 
 ## Boundaries
 
@@ -22,7 +22,9 @@ Resources have exactly one journaled owner. Retention transfers cleanup responsi
 
 ## Control and data flow
 
-The current domain flow is one task: creation, worker result, reviewer approval or one revision request, integration, and cleanup. It derives cancellation, blocked-agent, protocol-failure, and cleanup-warning outcomes from validated journal events. Before that flow can start, the Pi adapter checks TUI/trust/task/model gates and reads fixed runtime, filesystem, colocated Jujutsu/Git, state-path, artifact-ignore, and installed Herdr-schema facts. The package has a coordinator-owned guarded child extension and contained artifact adapter, but no child process is launched yet. No decomposer, DAG, scheduler, Rift, Herdr, Jujutsu workspace, or Git transport adapter exists yet.
+The current domain flow is one task: creation, worker result, reviewer approval or one revision request, integration, and cleanup. It derives cancellation, blocked-agent, protocol-failure, and cleanup-warning outcomes from validated journal events. Before that flow can start, the Pi adapter checks TUI/trust/task/model gates and reads fixed runtime, filesystem, colocated Jujutsu/Git, state-path, artifact-ignore, and installed Herdr-schema facts.
+
+The one-worker supervisor creates a `copyAll`, no-hooks Rift snapshot without a source-removal operation, records its copied change identity, creates a fresh task change from exact base, creates ignored artifacts, starts a guarded child Pi through Herdr, waits for `idle` readiness before sending the full user command, and retains blocked/invalid resources. Herdr settlement becomes a semantic result only after artifact and structural Jujutsu validation. No decomposer, DAG, multi-worker scheduler, publication transport, reviewer launch, or integration adapter exists yet.
 
 ## Persistence and recovery
 

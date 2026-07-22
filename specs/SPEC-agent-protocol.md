@@ -4,7 +4,7 @@ The current coordinator owns built-in worker and reviewer contracts. Decomposer,
 
 ## Configuration and prompts
 
-Worker and reviewer instructions are built-in package assets. The child launch policy disables built-in tools, discovered extensions, skills, prompt templates, context files, themes, sessions, and project approval; it explicitly loads only the coordinator-owned child extension. Global/project role configuration, specialization, role model patterns, and overrides are not implemented.
+Worker and reviewer instructions are built-in package assets. The child launch policy disables built-in tools, discovered extensions, skills, prompt templates, context files, themes, sessions, and project approval; it explicitly loads only the coordinator-owned child extension. The worker command selects the parent model and appends the built-in worker prompt. Global/project role configuration, specialization, and overrides are not implemented.
 
 Project/repository/task text remains untrusted data and cannot override isolation, identity, artifact, or permission rules.
 
@@ -21,7 +21,7 @@ Before launch the coordinator creates and verifies an ignored contained area:
 
 The coordinator creates the artifact directories only after proving `/.pi-subagents/` is ignored in the local Git exclude policy. Input envelopes are version-one coordinator-written JSON plus a SHA-256 sidecar, mode `0400`, and validated before output use. Worker and reviewer result outputs are version-one, size-limited, strict-schema JSON, identity-bound to the envelope, written through a same-directory atomic rename, and rejected when regular-file, containment, symlink, or checksum checks fail. A Jujutsu commit-ID invariant proves artifact writes do not change the current task change.
 
-Current envelopes carry run/task/attempt/role IDs, task text, canonical root, declared tracked write paths, assigned base commit, and the fixed version-one output path. Herdr/Rift identities, model facts, checks, deadlines, and prompt hashes are added with their owning runtime slices.
+Current envelopes carry run/task/attempt/role IDs, the full user command as task/acceptance guidance, canonical root, declared tracked write paths, assigned base commit, and the fixed version-one output path. The worker supervisor separately retains Herdr pane and Rift identities. Model facts, checks, deadlines, and prompt hashes are not persisted yet.
 
 ## Outputs
 

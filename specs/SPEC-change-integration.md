@@ -1,14 +1,14 @@
 # SPEC-change-integration: Isolated revision, review, and integration protocol
 
-One worker attempt exclusively owns one Rift workspace, Herdr pane, fresh Jujutsu task change, artifact area, and temporary transport bookmark. The coordinator source workspace is never exposed to agents.
+One worker attempt exclusively owns one Rift workspace, Herdr pane, fresh Jujutsu task change, and artifact area. The coordinator source workspace is never exposed to agents. A temporary transport bookmark is added by the later publication flow. The current implementation creates and retains the snapshot/pane/artifact/task-change subset; transport publication is not implemented yet.
 
 ## Revision contract
 
 The assigned base includes all integrated dependencies. Worker bootstrap records the copied forbidden working-copy change ID and creates a fresh change from the exact base.
 
-Default publication is one non-empty described change. A task may allow an ordered stack, default maximum five. Every member must be attempt-authored, descendant of the assigned base, within declared scope, and listed parent-first.
+The current contract accepts exactly one non-empty described, non-merge task change with one parent equal to assigned base. It must be descendant of that base, conflict-free, in declared path scope, free of tracked `.pi-subagents` artifacts, and exactly agree with the structured result's change and commit IDs. Stacks, result repair, project checks, and execution retry are unsupported.
 
-The worker result binds exact change/commit IDs, base, transport bookmark/target, paths, checks, and evidence. The coordinator independently validates repository state before publication and after fetch.
+The coordinator independently validates artifact and repository facts after Herdr settlement. Settlement/idle text alone never completes an attempt. A blocked agent or invalid result stops progression and retains its Rift/pane/artifact identities for diagnostics.
 
 Workers can update only their lease-protected temporary bookmark in a coordinator-owned local bare Git repository. They have no upstream credentials. Ref movement invalidates prior validation/review.
 
@@ -33,4 +33,3 @@ Conflicts return to the original worker in an assigned conflict-resolution works
 Temporary refs are deleted with lease checks after terminal disposition. Successful workspaces remain until run end by default. Failed, forced, invalid, or escalated resources are retained under bounded diagnostic policy. Cleanup is idempotent, verifies Rift identity, never unregisters the source root, and reconciles stale refs/panes/workspaces after interruption.
 
 This protocol depends on [DESIGN-herdr-rift-jj](DESIGN-herdr-rift-jj.md) and [SPEC-agent-protocol](SPEC-agent-protocol.md).
-

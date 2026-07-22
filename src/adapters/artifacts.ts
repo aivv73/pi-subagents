@@ -11,6 +11,9 @@ import {
   type ChildGuardConfig,
   type ResultArtifact,
 } from "../domain/artifact-schema.js";
+import type { AttemptArtifacts } from "../ports/artifacts.js";
+
+export type { AttemptArtifacts } from "../ports/artifacts.js";
 
 const execFileAsync = promisify(execFile);
 const identifierPattern = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
@@ -18,16 +21,6 @@ const maxDefaultOutputBytes = 64 * 1024;
 
 export class ArtifactError extends Error {
   override readonly name = "ArtifactError";
-}
-
-export interface AttemptArtifacts {
-  readonly root: string;
-  readonly directory: string;
-  readonly inputPath: string;
-  readonly checksumPath: string;
-  readonly outputPath: string;
-  readonly evidenceDirectory: string;
-  readonly envelope: AttemptEnvelope;
 }
 
 const sha256 = (content: string): string => createHash("sha256").update(content).digest("hex");

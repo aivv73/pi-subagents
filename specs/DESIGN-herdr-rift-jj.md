@@ -12,6 +12,8 @@ Rift provides fast copy-on-write snapshots including ignored dependencies when `
 
 The worker creates a fresh Jujutsu task change from the assigned base because an exact snapshot duplicates the source working-copy change ID. Temporary bookmark transport preserves commit/change identity while keeping upstream credentials away from workers.
 
+The current worker runtime invokes only fixed-argv `rift init` and `rift create <source> --into <destination> --name <attempt> --copy-all --no-hooks`; it never calls a Rift source-removal operation. It starts named child Pi processes through Herdr, verifies the returned pane identity and `idle` readiness before sending a prompt, and treats a later `blocked` status as retained attention rather than success.
+
 ## Tradeoffs
 
 Independent repositories lose shared Jujutsu operation history and require explicit publication, fetch, lease, and cleanup. Approved parallel revisions may conflict when integrated against a newer base, so changed effective diffs require conflict resolution and fresh review.

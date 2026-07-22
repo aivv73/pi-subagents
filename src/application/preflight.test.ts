@@ -11,7 +11,7 @@ const installedHerdrSchema = JSON.stringify({
   schema_version: 1,
   schemas: {
     request: {
-      anyOf: [{ const: "agent.start" }, { const: "agent.send" }, { const: "session.snapshot" }],
+      anyOf: [{ const: "agent.start" }, { const: "agent.get" }, { const: "agent.send" }, { const: "session.snapshot" }],
     },
     event: {},
   },
@@ -118,7 +118,7 @@ describe("runPreflight", () => {
     const schemaWithoutSend = JSON.stringify({
       protocol: 16,
       schema_version: 1,
-      schemas: { request: { anyOf: [{ const: "agent.start" }, { const: "session.snapshot" }] }, event: {} },
+      schemas: { request: { anyOf: [{ const: "agent.start" }, { const: "agent.get" }, { const: "session.snapshot" }] }, event: {} },
     });
     const { environment } = fixture({
       [key("herdr", ["api", "schema", "--json"])]: success(schemaWithoutSend),
