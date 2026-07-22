@@ -14,6 +14,8 @@ The worker creates a fresh Jujutsu task change from the assigned base because an
 
 The current worker runtime invokes only fixed-argv `rift init` and `rift create <source> --into <destination> --name <attempt> --copy-all --no-hooks`; it never calls a Rift source-removal operation. It starts named child Pi processes through Herdr, verifies the returned pane identity and `idle` readiness before sending a prompt, and treats a later `blocked` status as retained attention rather than success.
 
+The current transport implementation creates a bare `transport.git` under coordinator state, disables its hooks, and uses a coordinator-owned named Jujutsu remote only. It observes the exact attempt ref before push, relies on Jujutsu's fetched-remote lease check, refuses a pre-existing attempt ref, verifies the bare target immediately after push, then fetches and rechecks exact commit/change/base identity in the coordinator repository. Neither child role receives this transport capability.
+
 ## Tradeoffs
 
 Independent repositories lose shared Jujutsu operation history and require explicit publication, fetch, lease, and cleanup. Approved parallel revisions may conflict when integrated against a newer base, so changed effective diffs require conflict resolution and fresh review.
