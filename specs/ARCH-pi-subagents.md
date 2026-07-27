@@ -1,13 +1,13 @@
 # ARCH-pi-subagents: Pi subagent orchestration architecture
 
-`@aivv/pi-subagents` is a TypeScript Pi extension for reviewer-controlled, isolated subagent orchestration. Its current package registers the TUI-only `/subagents run --paths path[,path...] <task>` command surface, provides the event-sourced foundation and isolated worker/reviewer/publication/revision/integration/cleanup services for one direct run, and invokes read-only preflight and direct-task admission. The parent command is not yet bound to that coordinator, so a passing admission still creates no journal, Rift, transport, Herdr pane, or agent.
+`@aivv/pi-subagents` is a TypeScript Pi extension for reviewer-controlled, isolated subagent orchestration. Its current package registers the TUI-only `/subagents run --paths path[,path...] <task>` command surface, provides the event-sourced foundation, an injected single-run supervisor, and isolated worker/reviewer/publication/revision/integration/cleanup services. It invokes read-only preflight and direct-task admission. The parent command is not yet bound to that coordinator, so a passing admission still creates no journal, Rift, transport, Herdr pane, or agent.
 
 ## Boundaries
 
 The system has five inward-pointing layers. The current foundation implements the domain core, JSONL journal adapter, and single-run registry; future adapters and coordination remain outside the current executable surface.
 
 1. **Pi adapter** registers commands/tools and renders semantic state. It does not own orchestration decisions.
-2. **Application services** claim one active direct run and will supervise it, dispatch ready work, reconcile resources, and apply policies as those behaviors are added.
+2. **Application services** claim one active direct run, supervise its validated sequence, own retained resources, and apply direct-run policies. The Pi adapter chooses when to dispatch them.
 3. **Domain core** decides commands, emits events, and reduces events into run/task/attempt state without importing Pi, Herdr, Rift, process, filesystem, or TUI APIs.
 4. **Ports** describe journals, artifacts, Herdr, Rift, Jujutsu, Git transport, clocks, IDs, and process execution.
 5. **Adapters** implement ports with JSONL/filesystem storage, Herdr CLI/socket APIs, and command-backed Rift, `jj`, and Git clients.
@@ -16,7 +16,7 @@ The package also contains a coordinator-owned child Pi extension. Child Pi start
 
 ## Runtime ownership
 
-`SingleRunRegistry` admits one active run and rejects a second with the active run ID. The direct-run state reducer owns the semantic worker/reviewer lifecycle and mutation intent/outcome facts. No dispatcher, capacity lease, RunSupervisor fiber, external resource scope, or retained-resource registry exists yet.
+`SingleRunRegistry` admits one active run and rejects a second with the active run ID. The injected direct-run supervisor allocates run/task/attempt/causation IDs, opens and creates the run journal, sequences worker/publication/review/one-revision/integration/cleanup services, retains every observed pane/Rift/ref until verified cleanup, and releases only its in-memory registry claim at disposition. It does not recover old journals or decide Pi command dispatch.
 
 Resources have exactly one journaled owner. Retention transfers cleanup responsibility from an attempt scope to the run retention registry; it never silently suppresses cleanup.
 

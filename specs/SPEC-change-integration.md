@@ -22,6 +22,8 @@ The first and only `revision_requested` returns its findings to the original wor
 
 Reviewer tracked mutation fails the review invocation.
 
+The direct-run supervisor invokes this sequence only after it has journaled run creation and worker start. It records each worker/reviewer Rift and Herdr identity as soon as the attempt returns, retains all of them on pre-integration invalid/blocked/failure disposition, and passes every known identity to cancellation or verified cleanup. It never treats a service return or terminal text as approval without that service's existing validation.
+
 ## Integration
 
 The current single-task integration requires an exact `approved` reviewer decision, fetched transport commit/change identity, approved revision facts, a clean source `@`, and source `@-` equal to the assigned base immediately before mutation. Public direct-task admission separately requires that source condition before dispatch and rejects a repository state directory with an unfinished run; it does not resume or clean that run. Any drift, stale approval/ref, scope/shape failure, or structural conflict returns a retained failure and does not mutate source.

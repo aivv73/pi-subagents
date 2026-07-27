@@ -51,7 +51,7 @@ export default function piSubagentsExtension(pi: ExtensionAPI): void {
       // preflight or a Herdr lifecycle label as worker validation, review, or integration.
       context.ui.setWidget?.("pi-subagents", progressWidget({ phase: "preflight", detail: "Preflight and direct-task admission passed; coordinator dispatch is not yet bound to this command." }));
       context.ui.notify(
-        `Preflight passed for “${invocation.task}”, but worker orchestration is not implemented yet.`,
+        `Preflight and direct-task admission passed for “${invocation.task}”, but orchestration is not yet bound to this command.`,
         "info",
       );
     },

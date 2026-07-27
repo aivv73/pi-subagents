@@ -1,6 +1,6 @@
 # SPEC-task-graph: Task graph and run semantics
 
-The current coordinator foundation owns one direct task per run. It has no graph, decomposition, dynamic task creation, queue, concurrency, or execution retry.
+The current injected coordinator supervisor owns one direct task per run. It has no graph, decomposition, dynamic task creation, queue, concurrency, or execution retry. The public Pi command is not bound to that supervisor yet.
 
 ## Decomposition
 
@@ -19,7 +19,7 @@ Runs terminate as:
 
 ## Scheduling
 
-`SingleRunRegistry` permits one active direct run. There is no ready queue, priority ordering, role capacity, or concurrent task scheduling.
+`SingleRunRegistry` permits one active direct run. The supervisor allocates its run/task/attempt identities and creates the journal before beginning the worker sequence; it always releases only the process-local claim at a terminal or retained disposition. There is no ready queue, priority ordering, role capacity, or concurrent task scheduling.
 
 ## Failure and retries
 
