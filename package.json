@@ -24,6 +24,9 @@
   ],
   "main": "./dist/extension.js",
   "types": "./dist/extension.d.ts",
+  "bin": {
+    "pi-subagents": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/extension.d.ts",

@@ -19,6 +19,19 @@ npm pack
 Pi, Herdr, Rift, Jujutsu, and Git are separate external prerequisites. This package
 does not bundle or install them.
 
+## Runtime doctor
+
+After installation, inspect the current repository's read-only runtime and capability
+diagnosis for automation or support:
+
+```sh
+pi-subagents doctor --json
+```
+
+It writes one versioned JSON report to stdout, exits `0` only when every required check
+passes, exits `1` for an unsupported environment, and exits `2` for invalid invocation
+or an unexpected diagnostic failure. It never creates orchestration resources.
+
 ## Opt-in live acceptance
 
 `npm run acceptance:real` is deliberately excluded from `npm test` and CI. It starts
