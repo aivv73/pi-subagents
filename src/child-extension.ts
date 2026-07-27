@@ -41,6 +41,20 @@ const loadConfig = (): ChildGuardConfig => {
   }
 };
 
+/** Gives the child the coordinator-owned fields it must echo without exposing its artifact files. */
+const resultInstruction = (config: ChildGuardConfig): string => {
+  const shared = {
+    schemaVersion: 1,
+    runId: config.envelope.runId,
+    taskId: config.envelope.taskId,
+    attemptId: config.envelope.attemptId,
+  };
+  const template = config.role === "worker"
+    ? { _tag: "worker", ...shared, changeId: "<current change ID>", commitId: "<current commit ID>", changedPaths: ["<each changed declared path>"] }
+    : { _tag: "reviewer", ...shared, commitId: config.reviewedCommitId, assignedBaseCommitId: config.reviewedBaseCommitId, decision: "approved or revision_requested", findings: "findings" };
+  return `Atomically write one strict result JSON object. Echo every fixed coordinator field exactly; replace only angle-bracket fields or the reviewer decision/findings: ${JSON.stringify(template)}`;
+};
+
 /** Explicit child-only extension. It registers no shell, network, environment, or arbitrary-process tool. */
 export default function childExtension(pi: ExtensionAPI): void {
   const config = loadConfig();
@@ -125,7 +139,7 @@ export default function childExtension(pi: ExtensionAPI): void {
   pi.registerTool({
     name: "subagent_write_result",
     label: "Write structured result",
-    description: "Atomically write the one strict result JSON object for this assigned attempt.",
+    description: resultInstruction(config),
     parameters: Type.Object({ json: Type.String({ maxLength: 65536 }) }),
     async execute(_id, parameters) {
       return guarded(

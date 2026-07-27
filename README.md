@@ -19,6 +19,23 @@ npm pack
 Pi, Herdr, Rift, Jujutsu, and Git are separate external prerequisites. This package
 does not bundle or install them.
 
+## Opt-in live acceptance
+
+`npm run acceptance:real` is deliberately excluded from `npm test` and CI. It starts
+real Pi worker and reviewer agents, so it requires an authenticated model and a btrfs
+fixture location. To run it, explicitly opt in and select a configured Pi model:
+
+```sh
+PI_SUBAGENTS_ACCEPTANCE_REAL=1 \
+PI_SUBAGENTS_ACCEPTANCE_MODEL=provider/model \
+npm run acceptance:real
+```
+
+Set `PI_SUBAGENTS_ACCEPTANCE_ROOT` to an existing btrfs directory when the system
+temporary directory is not btrfs. The harness creates its source repository, state,
+Rifts, and local transport below one disposable fixture there. It removes that fixture
+only after a fully successful run and prints its path for inspection on failure.
+
 ## License
 
 Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.

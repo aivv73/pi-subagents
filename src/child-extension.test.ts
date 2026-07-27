@@ -6,7 +6,9 @@ import { describe, expect, it } from "vitest";
 
 import childExtension from "./child-extension.js";
 
-const withRole = async (role: "worker" | "reviewer", test: (tools: readonly string[]) => Promise<void>): Promise<void> => {
+type RegisteredTool = { readonly name: string; readonly description: string };
+
+const withRole = async (role: "worker" | "reviewer", test: (tools: readonly RegisteredTool[]) => Promise<void>): Promise<void> => {
   const root = await mkdtemp(join(tmpdir(), "pi-subagents-child-extension-"));
   const previous = process.env.PI_SUBAGENTS_GUARD_CONFIG;
   try {
@@ -33,8 +35,8 @@ const withRole = async (role: "worker" | "reviewer", test: (tools: readonly stri
       maxReadBytes: 4096,
       maxOutputBytes: 4096,
     });
-    const tools: string[] = [];
-    childExtension({ registerTool: (tool: { name: string }) => tools.push(tool.name) } as never);
+    const tools: RegisteredTool[] = [];
+    childExtension({ registerTool: (tool: RegisteredTool) => tools.push(tool) } as never);
     await test(tools);
   } finally {
     if (previous === undefined) delete process.env.PI_SUBAGENTS_GUARD_CONFIG;
@@ -46,7 +48,8 @@ const withRole = async (role: "worker" | "reviewer", test: (tools: readonly stri
 describe("child guard extension", () => {
   it("registers the worker-only contained edit and narrow Jujutsu tools", async () => {
     await withRole("worker", async (tools) => {
-      expect(tools).toEqual(expect.arrayContaining([
+      const names = tools.map((tool) => tool.name);
+      expect(names).toEqual(expect.arrayContaining([
         "subagent_read",
         "subagent_search",
         "subagent_write",
@@ -55,17 +58,31 @@ describe("child guard extension", () => {
         "subagent_jj_describe",
         "subagent_write_result",
       ]));
-      expect(tools).not.toContain("bash");
-      expect(tools).not.toContain("subagent_jj_diff");
+      expect(names).not.toContain("bash");
+      expect(names).not.toContain("subagent_jj_diff");
     });
   });
 
   it("registers reviewer-only read, search, diff, and result tools", async () => {
     await withRole("reviewer", async (tools) => {
-      expect(tools).toEqual(expect.arrayContaining(["subagent_read", "subagent_search", "subagent_jj_diff", "subagent_write_result"]));
-      expect(tools).not.toContain("subagent_write");
-      expect(tools).not.toContain("subagent_edit");
-      expect(tools).not.toContain("subagent_jj_describe");
+      const names = tools.map((tool) => tool.name);
+      expect(names).toEqual(expect.arrayContaining(["subagent_read", "subagent_search", "subagent_jj_diff", "subagent_write_result"]));
+      expect(names).not.toContain("subagent_write");
+      expect(names).not.toContain("subagent_edit");
+      expect(names).not.toContain("subagent_jj_describe");
+    });
+  });
+
+  it("gives each role the exact coordinator fields required by its strict result", async () => {
+    await withRole("worker", async (tools) => {
+      const description = tools.find((tool) => tool.name === "subagent_write_result")?.description;
+      expect(description).toContain('"runId":"run-1"');
+      expect(description).toContain('"changeId":"<current change ID>"');
+    });
+    await withRole("reviewer", async (tools) => {
+      const description = tools.find((tool) => tool.name === "subagent_write_result")?.description;
+      expect(description).toContain('"commitId":"reviewed-commit"');
+      expect(description).toContain('"assignedBaseCommitId":"base"');
     });
   });
 });
