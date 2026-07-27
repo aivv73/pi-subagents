@@ -4,8 +4,9 @@ Reviewer-controlled isolated subagent orchestration for [Pi](https://pi.dev).
 
 This prerelease package currently registers `/subagents run --paths path[,path...] <task>`.
 It validates declared write scope, a clean conflict-free source, and retained-run
-admission before dispatch. It does not yet create a workspace, journal, subprocess,
-or repository change.
+admission before dispatching one background isolated worker/reviewer run. Use
+`/subagents cancel` to cancel the active pre-integration run. Terminal outcomes are
+recorded in Pi and retained resources remain available for inspection.
 
 ## Local verification
 

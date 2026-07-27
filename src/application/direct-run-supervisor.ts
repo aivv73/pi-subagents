@@ -28,7 +28,16 @@ export interface DirectRunRequest {
   readonly piExecutable: string;
   readonly parentModel: string;
   readonly parentEnvironment: NodeJS.ProcessEnv;
+  readonly onProgress?: (progress: DirectRunProgress) => void;
 }
+
+/** Coordinator facts for an adapter; not agent lifecycle observations. */
+export type DirectRunProgress =
+  | { readonly phase: "worker_running" | "worker_validating" | "reviewing" | "revision_requested" | "integrating" | "cleaning" }
+  | { readonly phase: "blocked" | "failed"; readonly detail: string }
+  | { readonly phase: "cancelled" }
+  | { readonly phase: "succeeded"; readonly approvedCommitId: string }
+  | { readonly phase: "succeeded_with_cleanup_warning"; readonly approvedCommitId: string; readonly detail: string };
 
 export interface DirectRunDependencies {
   readonly ids: DirectRunIdSource;
@@ -118,6 +127,7 @@ export class DirectRunSupervisor {
     let cancellation: Promise<void> | undefined;
     let integrationStarted = false;
     const resources = (): TerminalResources => retained(input, agents, rifts, publication);
+    const report = (progress: DirectRunProgress): void => input.onProgress?.(progress);
     const isCancelled = (): boolean => cancellation !== undefined;
     const cancel = async (): Promise<{ readonly _tag: "cancelled" } | { readonly _tag: "too_late" }> => {
       if (integrationStarted) return { _tag: "too_late" };
@@ -132,16 +142,19 @@ export class DirectRunSupervisor {
     };
     const cancelled = async (): Promise<DirectRunDisposition> => {
       await cancellation;
+      report({ phase: "cancelled" });
       return { _tag: "cancelled", retained: resources() };
     };
     const fail = async (reason: string): Promise<DirectRunDisposition> => {
       if (isCancelled()) return cancelled();
       try { await journal.append({ causationId: commandId, correlationId: runId, payload: { _tag: "run_failed", reason } }); } catch { /* preserve the original failure and retained evidence */ }
+      report({ phase: "failed", detail: reason });
       return { _tag: "failed", reason, retained: resources() };
     };
     const block = async (role: "worker" | "reviewer", reason: string): Promise<DirectRunDisposition> => {
       if (isCancelled()) return cancelled();
       try { await journal.append({ causationId: commandId, correlationId: runId, payload: { _tag: "agent_blocked", role, diagnostic: reason } }); } catch { /* preserve evidence */ }
+      report({ phase: "blocked", detail: reason });
       return { _tag: "blocked", reason, retained: resources() };
     };
 
@@ -149,11 +162,13 @@ export class DirectRunSupervisor {
       try {
         const workerAttemptId = this.dependencies.ids.next("attempt");
         await journal.append({ causationId: commandId, correlationId: runId, payload: { _tag: "worker_started" } });
+        report({ phase: "worker_running" });
         const startedWorker = await startWorkerAttempt(workerRequest(input, runId, taskId, workerAttemptId, this.dependencies.snapshots), this.dependencies.workerRuntime);
         rifts.push({ id: startedWorker.snapshot.id, root: startedWorker.snapshot.root });
         agents.push(startedWorker.agent);
         if (isCancelled()) return cancelled();
         if (startedWorker._tag === "blocked") return block("worker", startedWorker.reason);
+        report({ phase: "worker_validating" });
         const worker = await superviseWorkerAttempt(startedWorker, input.assignedBaseCommitId, input.allowedTrackedPaths, this.dependencies.workerRuntime);
         if (isCancelled()) return cancelled();
         if (worker._tag === "blocked") return block("worker", worker.reason);
@@ -165,6 +180,7 @@ export class DirectRunSupervisor {
         if (isCancelled()) return cancelled();
 
         const initialReviewerAttemptId = this.dependencies.ids.next("attempt");
+        report({ phase: "reviewing" });
         const reviewRequest = reviewerRequest(input, runId, taskId, initialReviewerAttemptId, publication, validatedWorker, this.dependencies.snapshots);
         const startedReview = await startReviewerAttempt(reviewRequest, this.dependencies.reviewerRuntime);
         rifts.push({ id: startedReview.snapshot.id, root: startedReview.snapshot.root });
@@ -178,6 +194,7 @@ export class DirectRunSupervisor {
 
         let approved: ReviewedDecision;
         if (review.result.decision === "revision_requested") {
+          report({ phase: "revision_requested" });
           const revisedReviewerAttemptId = this.dependencies.ids.next("attempt");
           const revisedRequest = reviewerRequest(input, runId, taskId, revisedReviewerAttemptId, publication, validatedWorker, this.dependencies.snapshots);
           const revision = await runOneRevisionCycle({
@@ -198,6 +215,7 @@ export class DirectRunSupervisor {
         if (review.result.decision !== "approved") return fail("review did not produce approval");
         approved = review;
         if (isCancelled()) return cancelled();
+        report({ phase: "integrating" });
         integrationStarted = true;
         const integration = await integrateApprovedChange({
           approval: approved, sourceRoot: input.sourceRoot, transportRef: publication.transportRef,
@@ -205,10 +223,15 @@ export class DirectRunSupervisor {
           runtime: this.dependencies.integrationRuntime, journal, causationId: commandId,
         });
         if (integration._tag === "blocked") return fail(`integration blocked: ${integration.reasons.join(", ")}`);
+        report({ phase: "cleaning" });
         const cleanup = await cleanupIntegratedResources({ runId, causationId: commandId, resources: resources(), runtime: this.dependencies.terminalRuntime, journal });
-        return cleanup._tag === "succeeded"
-          ? { _tag: "succeeded", approvedCommitId: integration.approvedCommitId }
-          : { _tag: "succeeded_with_cleanup_warning", approvedCommitId: integration.approvedCommitId, warnings: cleanup.warnings };
+        if (cleanup._tag === "succeeded") {
+          report({ phase: "succeeded", approvedCommitId: integration.approvedCommitId });
+          return { _tag: "succeeded", approvedCommitId: integration.approvedCommitId };
+        }
+        const detail = cleanup.warnings.join("; ");
+        report({ phase: "succeeded_with_cleanup_warning", approvedCommitId: integration.approvedCommitId, detail });
+        return { _tag: "succeeded_with_cleanup_warning", approvedCommitId: integration.approvedCommitId, warnings: cleanup.warnings };
       } catch (error) {
         return fail(error instanceof Error ? error.message : String(error));
       } finally {

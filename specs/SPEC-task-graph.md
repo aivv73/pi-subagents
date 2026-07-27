@@ -1,6 +1,6 @@
 # SPEC-task-graph: Task graph and run semantics
 
-The current injected coordinator supervisor owns one direct task per run. It has no graph, decomposition, dynamic task creation, queue, concurrency, or execution retry. The public Pi command is not bound to that supervisor yet.
+The current injected coordinator supervisor owns one direct task per run. The public Pi command dispatches it in the background only after admission, then returns the generated run ID. It has no graph, decomposition, dynamic task creation, queue, concurrency, or execution retry.
 
 ## Decomposition
 
@@ -27,6 +27,6 @@ The state model permits exactly one reviewer-requested revision. The implemented
 
 ## Cancellation
 
-Cancellation moves the task through `cancelling` to `cancelled`. The coordinator asks each known agent to stop, waits a bounded interval, then sends one pane `Ctrl+C` when needed; all cancellation resources remain retained even when settlement is uncertain. Cancellation never triggers integration or cleanup. Integrated work remains integrated and unapproved work never becomes integrated. The current journal scanner reports unfinished runs as paused and does not resume or delete them.
+`/subagents cancel` addresses the sole process-local active run. Cancellation moves the task through `cancelling` to `cancelled`. The coordinator asks each known agent to stop, waits a bounded interval, then sends one pane `Ctrl+C` when needed; all cancellation resources remain retained even when settlement is uncertain. It is refused after integration starts, because cancellation cannot trigger integration, cleanup, or rollback. An absent active run is informational. The current journal scanner reports unfinished runs as paused and does not resume or delete them.
 
 Architecture and persistence follow [ARCH-pi-subagents](ARCH-pi-subagents.md).

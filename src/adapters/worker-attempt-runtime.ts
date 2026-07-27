@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
-import { lstat, realpath } from "node:fs/promises";
+import { lstat, mkdir, realpath } from "node:fs/promises";
+import { dirname } from "node:path";
 import { promisify } from "node:util";
 
 import { createAttemptArtifacts, readResultArtifact, type AttemptArtifacts } from "./artifacts.js";
@@ -73,6 +74,7 @@ export class NodeWorkerAttemptRuntime implements WorkerAttemptRuntime, ReviewerA
 
   async createExactSnapshot(request: { readonly sourceRoot: string; readonly destination: string; readonly name: string }): Promise<RiftSnapshot> {
     const rift = this.options.riftExecutable ?? "rift";
+    await mkdir(dirname(request.destination), { recursive: true });
     await command(rift, ["init", request.sourceRoot], request.sourceRoot);
     await command(rift, ["create", request.sourceRoot, "--into", request.destination, "--name", request.name, "--copy-all", "--no-hooks"], request.sourceRoot);
     const root = await realpath(request.destination);

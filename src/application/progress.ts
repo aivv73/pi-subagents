@@ -1,7 +1,7 @@
 /** Semantic coordinator progress only; Herdr process states are deliberately not phases here. */
 export type SemanticPhase =
   | "preflight" | "worker_running" | "worker_validating" | "reviewing" | "revision_requested"
-  | "integrating" | "cleaning" | "blocked" | "cancelled" | "failed" | "succeeded" | "succeeded_with_cleanup_warning";
+  | "integrating" | "cleaning" | "cancelling" | "blocked" | "cancelled" | "failed" | "succeeded" | "succeeded_with_cleanup_warning";
 
 export interface SemanticProgress {
   readonly phase: SemanticPhase;
@@ -13,7 +13,7 @@ export interface SemanticProgress {
 const labels: Readonly<Record<SemanticPhase, string>> = {
   preflight: "Preflight", worker_running: "Worker running", worker_validating: "Validating worker result",
   reviewing: "Reviewing exact revision", revision_requested: "Worker revision requested", integrating: "Integrating approved revision",
-  cleaning: "Cleaning verified resources", blocked: "Blocked — inspect retained resources", cancelled: "Cancelled — resources retained",
+  cleaning: "Cleaning verified resources", cancelling: "Cancellation requested", blocked: "Blocked — inspect retained resources", cancelled: "Cancelled — resources retained",
   failed: "Failed — resources retained", succeeded: "Succeeded", succeeded_with_cleanup_warning: "Succeeded — cleanup warning",
 };
 
