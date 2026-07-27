@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { runDoctor } from "./doctor.js";
 import { runPreflight, type PreflightRequest } from "./preflight.js";
+import { decodeDoctorReport } from "../domain/doctor-schema.js";
 import type { CommandResult, PreflightEnvironment } from "../ports/preflight.js";
 
 const key = (executable: string, arguments_: readonly string[]): string => `${executable}\u0000${arguments_.join("\u0000")}`;
@@ -69,6 +71,28 @@ const request = (overrides: Partial<PreflightRequest> = {}): PreflightRequest =>
 });
 
 describe("runPreflight", () => {
+  it("reports every shared read-only capability with strict versioned evidence", async () => {
+    const { environment, calls } = fixture();
+    const report = await runDoctor({ cwd: "/workspace" }, environment);
+
+    expect(report).toMatchObject({
+      schemaVersion: 1,
+      status: "passed",
+      issues: [],
+      evidence: { sourceRoot: "/workspace", assignedBaseCommitId: "base-commit", herdrProtocol: 16 },
+    });
+    expect(report.checks.map((check) => check.id)).toEqual(expect.arrayContaining([
+      "platform", "filesystem", "pi_version", "herdr_version", "herdr_schema", "rift_help", "rift_create_capability",
+      "jj_version", "git_version", "repository_colocation", "working_copy_empty", "working_copy_conflict_free",
+      "assigned_base_identity", "assigned_base_immutable", "state_directory", "artifact_ignore_path",
+    ]));
+    expect(new Set(report.checks.map((check) => check.id)).size).toBe(report.checks.length);
+    expect(decodeDoctorReport(report)).toEqual(report);
+    expect(() => decodeDoctorReport({ ...report, schemaVersion: 2 })).toThrow();
+    expect(calls).not.toContain(key("rift", ["create"]));
+    expect(calls).not.toContain(key("herdr", ["agent", "start"]));
+  });
+
   it("returns exact tested capability evidence without creating resources", async () => {
     const { environment, calls } = fixture();
     const result = await runPreflight(request(), environment);
@@ -128,6 +152,11 @@ describe("runPreflight", () => {
     expect(result).toMatchObject({
       _tag: "preflight_failed",
       issues: expect.arrayContaining([expect.objectContaining({ code: "missing_herdr_capability", message: expect.stringContaining("agent.send") })]),
+    });
+    const report = await runDoctor({ cwd: "/workspace" }, environment);
+    expect(report).toMatchObject({
+      status: "failed",
+      checks: expect.arrayContaining([expect.objectContaining({ id: "herdr_schema", status: "failed", issue: expect.objectContaining({ remediation: expect.stringContaining("Install a Herdr version") }) })]),
     });
   });
 
