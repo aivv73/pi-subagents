@@ -1,13 +1,13 @@
 # ARCH-pi-subagents: Pi subagent orchestration architecture
 
-`@aivv/pi-subagents` is a TypeScript Pi extension for reviewer-controlled, isolated subagent orchestration. Its TUI-only `/subagents run --paths path[,path...] <task>` command invokes read-only preflight and direct-task admission, then binds one background injected supervisor to the isolated worker/reviewer/publication/revision/integration/cleanup services. `/subagents cancel` addresses that sole active pre-integration run.
+`@aivv/pi-subagents` is a TypeScript Pi extension for reviewer-controlled, isolated subagent orchestration. Its TUI-only `/subagents run --paths path[,path...] <task>` command invokes read-only preflight and direct-task admission, then binds one background injected supervisor to the isolated worker/reviewer/publication/revision/integration/cleanup services. `/subagents cancel` addresses that sole active pre-integration run. In a trusted TUI, `/subagents doctor` renders the same read-only capability report emitted by the standalone `pi-subagents doctor --json` command.
 
 ## Boundaries
 
 The system has five inward-pointing layers. The current foundation implements the domain core, JSONL journal adapter, and single-run registry; future adapters and coordination remain outside the current executable surface.
 
 1. **Pi adapter** registers commands/tools and renders semantic state. It does not own orchestration decisions.
-2. **Application services** claim one active direct run, supervise its validated sequence, own retained resources, and apply direct-run policies. The Pi adapter constructs their trusted runtime dependencies and dispatches admitted commands.
+2. **Application services** claim one active direct run, supervise its validated sequence, own retained resources, apply direct-run policies, and produce the versioned read-only doctor report. The Pi and CLI adapters construct trusted runtime dependencies and render that report; neither owns capability policy.
 3. **Domain core** decides commands, emits events, and reduces events into run/task/attempt state without importing Pi, Herdr, Rift, process, filesystem, or TUI APIs.
 4. **Ports** describe journals, artifacts, Herdr, Rift, Jujutsu, Git transport, clocks, IDs, and process execution.
 5. **Adapters** implement ports with JSONL/filesystem storage, Herdr CLI/socket APIs, and command-backed Rift, `jj`, and Git clients.
@@ -36,7 +36,7 @@ The integration service validates the approved reviewer decision, current fetche
 
 Cancellation journals intent, asks each known agent to stop, waits a bounded interval, sends one `Ctrl+C` through its verified pane when necessary, and always retains Rifts/panes/refs for inspection. Verified post-integration cleanup lease-deletes the exact temporary ref, closes panes, removes only non-source Rifts, and runs Rift GC. Each step is idempotent and independent: complete cleanup journals `cleanup_succeeded`; any post-integration cleanup warning journals `cleanup_failed` and leaves integration intact. No decomposer, DAG, multi-worker scheduler, execution retry, result repair, rebase/conflict resolver, upstream update, recovery/resume, or old-run cleanup exists yet.
 
-The Pi adapter returns immediately after journal-backed background admission, identifies the active run, renders only semantic coordinator phases, and maps terminal disposition to one notification plus one sanitized durable custom entry. It never maps Herdr idle/done to validation, approval, or integration. `/subagents cancel` requests bounded cancellation only while integration has not started; an absent active run is informational, and a too-late request reports that integration/cleanup cannot be rolled back. Package verification checks required distributable source/assets/licenses and rejects journals, repository metadata, credentials, environments, and binary archives from the tarball.
+The Pi adapter returns immediately after journal-backed background admission, identifies the active run, renders only semantic coordinator phases, and maps terminal disposition to one notification plus one sanitized durable custom entry. It never maps Herdr idle/done to validation, approval, or integration. `/subagents cancel` requests bounded cancellation only while integration has not started; an absent active run is informational, and a too-late request reports that integration/cleanup cannot be rolled back. `/subagents doctor` requires project trust before it probes and emits one bounded notification containing only safe check codes and coordinator-authored remediation; it does not require task text or model authentication and does not create orchestration resources. Package verification checks required distributable source/assets/licenses and rejects journals, repository metadata, credentials, environments, and binary archives from the tarball.
 
 ## Persistence and recovery
 

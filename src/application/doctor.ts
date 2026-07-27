@@ -7,7 +7,10 @@ import type { CommandResult, PreflightEnvironment } from "../ports/preflight.js"
 
 const requiredHerdrCapabilities = ["agent.start", "agent.get", "agent.send", "pane.send_keys", "pane.close", "session.snapshot"] as const;
 
-const firstLine = (value: string): string => value.trim().split("\n")[0] ?? "";
+const firstLine = (value: string): string => (value.trim().split("\n")[0] ?? "")
+  .replace(/[\u0000-\u001f\u007f]/g, " ")
+  .replace(/\s+/g, " ")
+  .slice(0, 256);
 const commandDisplay = (executable: string, arguments_: readonly string[]): string => [executable, ...arguments_].join(" ");
 const repositoryIdFor = (sourceRoot: string): string => createHash("sha256").update(`pi-subagents:v1:${sourceRoot}`).digest("hex");
 
@@ -19,11 +22,10 @@ const capabilityPresent = (schema: unknown, capability: string): boolean => {
 };
 
 const commandIssue = (result: CommandResult, executable: string, arguments_: readonly string[]): DoctorIssue => {
-  const detail = firstLine(result.stderr) || firstLine(result.stdout) || `exit ${result.exitCode}`;
   const unavailable = result.exitCode === 127;
   return {
     code: unavailable ? "command_unavailable" : "command_failed",
-    message: `${commandDisplay(executable, arguments_)}: ${detail}`,
+    message: unavailable ? `${commandDisplay(executable, arguments_)} is unavailable.` : `${commandDisplay(executable, arguments_)} exited with status ${result.exitCode}.`,
     remediation: unavailable ? `Install ${executable} and ensure it is available on PATH.` : `Correct the reported ${executable} failure and run doctor again.`,
   };
 };
@@ -84,8 +86,8 @@ export const runDoctor = async (
       const missing = requiredHerdrCapabilities.filter((capability) => !capabilityPresent(schema, capability));
       if (missing.length > 0) fail("herdr_schema", issue("missing_herdr_capability", `Installed Herdr schema lacks ${missing.join(", ")}.`, "Install a Herdr version whose schema provides every required operation."));
       else pass("herdr_schema", `protocol ${herdrProtocol}, schema ${herdrSchemaVersion}`);
-    } catch (error) {
-      fail("herdr_schema", issue("invalid_herdr_schema", `Cannot decode installed Herdr schema: ${String(error)}`, "Install a Herdr version that returns a valid supported API schema."));
+    } catch {
+      fail("herdr_schema", issue("invalid_herdr_schema", "Cannot decode installed Herdr schema.", "Install a Herdr version that returns a valid supported API schema."));
     }
   }
 

@@ -14,6 +14,8 @@ Selecting an agent shows semantic details and an explicit **Focus in Herdr** act
 
 The adapter emits bounded notifications for command admission, preflight/admission failure, blocked/failure, cancellation, terminal success, and cleanup warning. It writes exactly one terminal custom entry containing only sanitized run ID, disposition, integrated commit when applicable, and retained resource identities; it excludes task text, paths, raw output, and terminal transcripts. Attention queues, overlay actions, and notification configuration are not implemented.
 
+In a trusted TUI, `/subagents doctor` emits one concise notification: a passed-check count, or a bounded list of safe failed-check codes with coordinator-authored remediation. It creates no widget, custom entry, attention item, or orchestration resource.
+
 ## Recovery and retention
 
 The current startup scanner reports unfinished journals as paused with manual-cleanup guidance; it does not migrate, reconcile, resume, or delete them. Cancellation retains uncertain resources. Verified post-integration cleanup records complete success separately from a cleanup warning, which never rolls back integration.

@@ -12,18 +12,21 @@ import { nodePreflightEnvironment } from "./adapters/node-preflight.js";
 import { NodeTerminalResourceRuntime } from "./adapters/terminal-resources.js";
 import { NodeWorkerAttemptRuntime } from "./adapters/worker-attempt-runtime.js";
 import { admitDirectTask } from "./application/direct-task-admission.js";
+import { runDoctor } from "./application/doctor.js";
 import { DirectRunSupervisor, type DirectRunRequest } from "./application/direct-run-supervisor.js";
 import { runPreflight } from "./application/preflight.js";
 import { progressNotification, progressWidget, type SemanticProgress } from "./application/progress.js";
 import { SingleRunRegistry } from "./application/run-registry.js";
 import { terminalProgress, terminalSummary } from "./application/terminal-summary.js";
 import { parseRunInvocation } from "./command.js";
+import type { DoctorReport } from "./domain/doctor-schema.js";
 
 const extensionDirectory = dirname(fileURLToPath(import.meta.url));
 const packageAsset = (name: string): string => join(extensionDirectory, "..", name);
 
 type StartableSupervisor = Pick<DirectRunSupervisor, "start">;
 export interface ExtensionDependencies {
+  readonly doctor: typeof runDoctor;
   readonly preflight: typeof runPreflight;
   readonly admission: typeof admitDirectTask;
   readonly preflightEnvironment: ReturnType<typeof nodePreflightEnvironment>;
@@ -34,6 +37,7 @@ export interface ExtensionDependencies {
 const defaultDependencies = (): ExtensionDependencies => {
   const registry = new SingleRunRegistry();
   return {
+    doctor: runDoctor,
     preflight: runPreflight,
     admission: admitDirectTask,
     preflightEnvironment: nodePreflightEnvironment(),
@@ -59,6 +63,11 @@ const defaultDependencies = (): ExtensionDependencies => {
 };
 
 const detail = (progress: SemanticProgress): string | undefined => progress.detail;
+const doctorNotification = (report: DoctorReport): { readonly message: string; readonly type: "info" | "error" } => {
+  if (report.status === "passed") return { message: `Subagents doctor passed (${report.checks.length} checks).`, type: "info" };
+  const remediation = report.issues.slice(0, 3).map((issue) => `${issue.code}: ${issue.remediation}`).join(" ");
+  return { message: `Subagents doctor found ${report.issues.length} issue(s). ${remediation}`, type: "error" };
+};
 
 /** The trusted Pi boundary owns command dispatch and rendering, never orchestration policy. */
 export function createPiSubagentsExtension(pi: ExtensionAPI, dependencies: ExtensionDependencies = defaultDependencies()): void {
@@ -70,8 +79,26 @@ export function createPiSubagentsExtension(pi: ExtensionAPI, dependencies: Exten
   };
 
   pi.registerCommand("subagents", {
-    description: "Run an isolated, reviewer-controlled subagent task",
+    description: "Run an isolated task or inspect subagent runtime capability",
     handler: async (argumentsText, context) => {
+      if (argumentsText.trim() === "doctor") {
+        if (context.mode !== "tui") {
+          context.ui.notify("/subagents doctor is available only in Pi's interactive TUI.", "error");
+          return;
+        }
+        if (!context.isProjectTrusted()) {
+          context.ui.notify("Trust this project before running /subagents doctor.", "warning");
+          return;
+        }
+        try {
+          const report = await dependencies.doctor({ cwd: context.cwd }, dependencies.preflightEnvironment);
+          const notification = doctorNotification(report);
+          context.ui.notify(notification.message, notification.type);
+        } catch {
+          context.ui.notify("Subagents doctor could not complete; inspect local runtime prerequisites and try again.", "error");
+        }
+        return;
+      }
       if (argumentsText.trim() === "cancel") {
         if (active === undefined) {
           context.ui.notify("No active subagent run to cancel.", "info");
